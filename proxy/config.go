@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"mycache/pkg/log"
 	"mycache/pkg/types"
 
 	"github.com/BurntSushi/toml"
@@ -23,7 +24,7 @@ var (
 // Config proxy config.
 type Config struct {
 	Stat string
-	// *log.Config
+	*log.Config
 	Proxy struct {
 		ReadTimeout    int   `toml:"read_timeout"`
 		WriteTimeout   int   `toml:"write_timeout"`
