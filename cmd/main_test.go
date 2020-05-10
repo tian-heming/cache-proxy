@@ -2,12 +2,19 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/stretchr/testify/assert"
 )
+
+func numberGen() string {
+	daystr := strings.Replace(time.Now().Format("2006-01-02")[2:], "-", "", -1)
+	return daystr + fmt.Sprintf("%06v", rand.New(rand.NewSource(time.Now().UnixNano())).Int63n(1000000))
+}
 
 func TestRedisClient(t *testing.T) {
 	rdb := redis.NewClient(&redis.Options{
@@ -20,9 +27,14 @@ func TestRedisClient(t *testing.T) {
 	assert.Equal(t, "PONG", pong)
 	t.Log(pong, err)
 	//写1000条在默认数据库,ttl:10分钟
-	for i := 0; i < 1000; i++ {
-		res, err := rdb.Set(fmt.Sprintf("%dkey", i), fmt.Sprintf("value%d of %dkey", i, i), 10*time.Minute).Result()
-		assert.Equal(t, nil, err)
-		t.Log(res)
+	for i := 0; i < 10; i++ {
+		thisKey := numberGen()
+		for i := 10; i > 0; i-- {
+			_, err := rdb.Set(fmt.Sprintf(`%s:%d`, thisKey, i), fmt.Sprintf("value%d of %s-key", i, thisKey), 10*time.Minute).Result()
+			assert.Equal(t, nil, err)
+			// t.Log(res)
+		}
+
 	}
+	defer rdb.Close()
 }
