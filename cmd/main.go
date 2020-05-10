@@ -91,7 +91,7 @@ func main() {
 	}
 	// pprof
 	if c.Stat != "" {
-		go http.ListenAndServe(c.Stat, nil)
+		go http.ListenAndServe(":2110", nil)
 		// if c.Proxy.UseMetrics {
 		// 	prom.Init()
 		// } else {

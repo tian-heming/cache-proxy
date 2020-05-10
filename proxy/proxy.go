@@ -126,6 +126,9 @@ func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwar
 			atomic.AddInt32(&p.conns, 1)                //原子+1
 			NewHandler(p, cc, conn, forwarder).Handle() //.Handle()这个是个go 函数，异步处理
 		}
+		atomic.AddInt32(&p.conns, 1) //原子+1
+		//新建个Handler去处理该连接上的请求
+		NewHandler(p, cc, conn, forwarder).Handle()
 	}
 }
 
