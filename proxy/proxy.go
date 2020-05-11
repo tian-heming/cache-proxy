@@ -32,8 +32,9 @@ type Proxy struct {
 	ccf        string // cluster configure file name
 	ccs        []*ClusterConfig
 	forwarders map[string]proto.Forwarder
-	lock       sync.Mutex
-	conns      int32 //服务实例已经维护的tcp连接数
+	lock       sync.Mutex //严格的独占互斥锁
+	// lock       sync.RWMutex //（读写锁：并读串写，且当前写是独占的）
+	conns int32 //服务实例已经维护的tcp连接数
 
 	closed bool
 }
@@ -109,23 +110,20 @@ func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwar
 					encoder = redis.NewProxyConn(libnet.NewConn(conn, time.Second, time.Second), cc.Password)
 					// case types.CacheTypeRedisCluster:
 					// 	encoder = rclstr.NewProxyConn(libnet.NewConn(conn, time.Second, time.Second), nil, cc.Password)
-					// }
-					//interface类型不是nil时，表示cc的类型存在匹配项
-					if encoder != nil {
-						// 该代理连接去按指定编码协议编码消息回写到连接（错误消息回写）
-						_ = encoder.Encode(proto.ErrMessage(ErrProxyMoreMaxConns))
-						_ = encoder.Flush() //把错误信息写回到指定编码协议的连接
-					}
-					//
-					_ = conn.Close() //关闭这个终端请求的tcp连接
-					if log.V(4) {
-						log.Warnf("proxy reject connection count(%d) due to more than max(%d)", conns, p.c.Proxy.MaxConnections)
-					}
-					continue
 				}
+				//interface类型不是nil时，表示cc的类型存在匹配项
+				if encoder != nil {
+					// 该代理连接去按指定编码协议编码消息回写到连接（错误消息回写）
+					_ = encoder.Encode(proto.ErrMessage(ErrProxyMoreMaxConns))
+					_ = encoder.Flush() //把错误信息写回到指定编码协议的连接
+				}
+				//
+				_ = conn.Close() //关闭这个终端请求的tcp连接
+				if log.V(4) {
+					log.Warnf("proxy reject connection count(%d) due to more than max(%d)", conns, p.c.Proxy.MaxConnections)
+				}
+				continue
 			}
-			atomic.AddInt32(&p.conns, 1)                //原子+1
-			NewHandler(p, cc, conn, forwarder).Handle() //.Handle()这个是个go 函数，异步处理
 		}
 		atomic.AddInt32(&p.conns, 1) //原子+1
 		//新建个Handler去处理该连接上的请求
@@ -205,16 +203,19 @@ func (p *Proxy) MonitorConfChange(ccf string) {
 
 func (p *Proxy) updateConfig(conf *ClusterConfig) (err error) {
 	p.lock.Lock()
+	//更新proxy运行时配置文件操作的上独占锁
 	defer p.lock.Unlock()
 	f, ok := p.forwarders[conf.Name]
 	if !ok {
 		err = errors.Wrapf(ErrProxyReloadIgnore, "cluster:%s", conf.Name)
 		return
 	}
+	//原子更新配置文件p.ccs
 	if err = f.Update(conf.Servers); err != nil {
 		err = errors.Wrapf(ErrProxyReloadFail, "cluster:%s error:%v", conf.Name, err)
 		return
 	}
+	//读取配置文件并比较
 	for _, oldConf := range p.ccs {
 		if oldConf.Name != conf.Name {
 			continue

@@ -6,7 +6,7 @@ hash_method = "fnv1a_64"
 # The key distribution mode. Possible values are: ketama.
 hash_distribution = "ketama"
 # A two character string that specifies the part of the key used for hashing. Eg "{}".
-hash_tag = ""
+hash_tag = "."
 # cache type: memcache | memcache_binary | redis | redis_cluster
 cache_type = "redis"
 # proxy listen proto: tcp | unix

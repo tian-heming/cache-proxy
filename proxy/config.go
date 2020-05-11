@@ -77,6 +77,7 @@ type ClusterConfig struct {
 	PingFailLimit    int             `toml:"ping_fail_limit"`
 	PingAutoEject    bool            `toml:"ping_auto_eject"`
 	// SlowlogSlowerThan int             `toml:"slowlog_slower_than"`
+
 	Servers  []string `toml:"servers"`
 	Password string   `toml:"password"`
 }
