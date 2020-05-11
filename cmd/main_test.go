@@ -29,10 +29,12 @@ func TestRedisClient(t *testing.T) {
 	//写1000条在默认数据库,ttl:10分钟
 	for i := 0; i < 10; i++ {
 		thisKey := numberGen()
-		for i := 10; i > 0; i-- {
-			_, err := rdb.Set(fmt.Sprintf(`%s.%d`, thisKey, i), fmt.Sprintf("value%d of %s-key", i, thisKey), 10*time.Minute).Result()
+		for i := 10000; i > 1000; i-- {
+			res, err := rdb.Set(fmt.Sprintf(`%s.%d`, thisKey, i), fmt.Sprintf("value%d of %s-key", i, thisKey), 10*time.Minute).Result()
+			if err != nil {
+				t.Log(res)
+			}
 			assert.Equal(t, nil, err)
-			// t.Log(res)
 		}
 
 	}
