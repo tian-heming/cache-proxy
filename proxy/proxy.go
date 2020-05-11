@@ -55,9 +55,9 @@ func (p *Proxy) Serve(ccs []*ClusterConfig) {
 	if len(ccs) == 0 {
 		log.Warnf("overlord will never listen on any port due to cluster is not specified")
 	}
-	p.lock.Lock()
+	// p.lock.Lock() 无意义的锁
 	p.forwarders = map[string]proto.Forwarder{}
-	p.lock.Unlock()
+	// p.lock.Unlock()
 	for _, cc := range ccs {
 		log.Infof("start to serve cluster[%s] with configs %v", cc.Name, *cc)
 		p.serve(cc)
@@ -79,6 +79,7 @@ func (p *Proxy) serve(cc *ClusterConfig) {
 }
 func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwarder) {
 	for {
+		//TODO: RACE
 		if p.closed {
 			log.Infof("mycache proxy cluster[%s] addr(%s) stop listen", cc.Name, cc.ListenAddr)
 			return
@@ -140,6 +141,7 @@ func (p *Proxy) Close() error {
 	for _, forwarder := range p.forwarders {
 		forwarder.Close()
 	}
+	// TODO :RACE,可能无关紧要
 	p.closed = true
 	return nil
 }
