@@ -30,7 +30,7 @@ func TestRedisClient(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		thisKey := numberGen()
 		for i := 10; i > 0; i-- {
-			_, err := rdb.Set(fmt.Sprintf(`%s:%d`, thisKey, i), fmt.Sprintf("value%d of %s-key", i, thisKey), 10*time.Minute).Result()
+			_, err := rdb.Set(fmt.Sprintf(`%s.%d`, thisKey, i), fmt.Sprintf("value%d of %s-key", i, thisKey), 10*time.Minute).Result()
 			assert.Equal(t, nil, err)
 			// t.Log(res)
 		}
