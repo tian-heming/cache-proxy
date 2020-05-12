@@ -29,8 +29,9 @@ func TestRedisClient(t *testing.T) {
 	//写1000条在默认数据库,ttl:10分钟
 	for i := 0; i < 10; i++ {
 		thisKey := numberGen()
-		for i := 10000; i > 1000; i-- {
-			res, err := rdb.Set(fmt.Sprintf(`%s.%d`, thisKey, i), fmt.Sprintf("value%d of %s-key", i, thisKey), 10*time.Minute).Result()
+		for i := 100; i > 0; i-- {
+			res, err := rdb.Set(fmt.Sprintf(`%s.%d`, thisKey, i),
+				fmt.Sprintf("value%d of %s-key", i, thisKey), 10*time.Minute).Result()
 			if err != nil {
 				t.Log(res)
 			}
@@ -39,4 +40,14 @@ func TestRedisClient(t *testing.T) {
 
 	}
 	defer rdb.Close()
+}
+
+func TestMapOne(t *testing.T) {
+	a := map[string]struct{}{
+		"ss": {},
+	}
+	t.Log(a, &a)
+	c, b := a["ss1"]
+
+	t.Log(c, b)
 }

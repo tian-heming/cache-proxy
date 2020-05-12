@@ -1,3 +1,9 @@
+/*
+	Forwarder接口的默认实现
+		定义
+
+*/
+
 package proxy
 
 import (
@@ -41,18 +47,17 @@ var (
 )
 
 var (
+	//默认单机转发类型
 	defaultForwardCacheTypes = map[types.CacheType]struct{}{
-		types.CacheTypeMemcache:       struct{}{},
-		types.CacheTypeMemcacheBinary: struct{}{},
-		types.CacheTypeRedis:          struct{}{},
+		types.CacheTypeMemcache:       {},
+		types.CacheTypeMemcacheBinary: {},
+		types.CacheTypeRedis:          {},
 	}
 )
 
 // NewForwarder new a Forwarder by cluster config.
 func NewForwarder(cc *ClusterConfig) proto.Forwarder {
-	// new Forwarder
-
-	//单机cache的协议转发器
+	//默认先构建单机协议转发器
 	if _, ok := defaultForwardCacheTypes[cc.CacheType]; ok {
 		return newDefaultForwarder(cc)
 	}
@@ -196,7 +201,7 @@ type connections struct {
 	ws         []int
 	aliasMap   map[string]string
 	nodePipe   map[string]*proto.NodeConnPipe
-	ring       *hashkit.HashRing
+	ring       *hashkit.HashRing //hash槽
 }
 
 func newConnections(cc *ClusterConfig) *connections {

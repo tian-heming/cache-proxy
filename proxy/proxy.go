@@ -1,3 +1,11 @@
+/*
+	起proxy主程
+	常驻内存
+	监听client的请求
+	新建和client的连接（三次握手）
+	起新协程异步处理新建的连接
+*/
+
 package proxy
 
 import (
@@ -26,20 +34,21 @@ var (
 	ErrProxyReloadFail   = errs.New("Proxy reload cluster config is failed")
 )
 
-//Proxy 定义个Proxy类型
+//Proxy 定义个Proxy数据存储类型
 type Proxy struct {
-	c          *Config
-	ccf        string // cluster configure file name
-	ccs        []*ClusterConfig
-	forwarders map[string]proto.Forwarder
-	lock       sync.Mutex //严格的独占互斥锁
+	c          *Config                    //主程配置
+	ccf        string                     //nodes的配置文件名
+	ccs        []*ClusterConfig           //nodes具体配置项
+	forwarders map[string]proto.Forwarder //主程指定类型的转发器集合
+	lock       sync.Mutex                 //严格的独占互斥锁
 	// lock       sync.RWMutex //（读写锁：并读串写，且当前写是独占的）
-	conns int32 //服务实例已经维护的tcp连接数
 
-	closed bool
+	conns int32 //主程并发的连接计数
+
+	closed bool //主城可用状态
 }
 
-// New new a proxy by config.
+//New 依配置新起一个proxy主程
 func New(c *Config) (p *Proxy, err error) {
 	if err = c.Validate(); err != nil {
 		err = errors.WithStack(err)
@@ -50,11 +59,12 @@ func New(c *Config) (p *Proxy, err error) {
 	return
 }
 
-//Serve is the main accept() loop of proxy server.
+//Serve 起主程主服务，监听配置端口
 func (p *Proxy) Serve(ccs []*ClusterConfig) {
+	//nodes配置
 	p.ccs = ccs
 	if len(ccs) == 0 {
-		log.Warnf("overlord will never listen on any port due to cluster is not specified")
+		log.Warnf("cache-proxy will never listen on any port due to cluster is not specified")
 	}
 	// p.lock.Lock() 无意义的锁
 	p.forwarders = map[string]proto.Forwarder{}
@@ -76,6 +86,7 @@ func (p *Proxy) serve(cc *ClusterConfig) {
 		panic(err)
 	}
 	log.Infof("mycache proxy cluster[%s] addr(%s) start listening", cc.Name, cc.ListenAddr)
+	//进入groutine（类似fork出子线程）领域，注意此后的并发写问题
 	go p.accept(cc, l, forwarder)
 }
 func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwarder) {
@@ -85,6 +96,8 @@ func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwar
 			log.Infof("mycache proxy cluster[%s] addr(%s) stop listen", cc.Name, cc.ListenAddr)
 			return
 		}
+		//协程建立连接 进入全双工双向通信领域，注意此conn状态
+		//并发模型：每个连接创建一个线程去处理
 		conn, err := l.Accept()
 		if err != nil {
 			if conn != nil {

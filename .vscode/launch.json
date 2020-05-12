@@ -11,8 +11,8 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "env": {},
-            //锁bug检查：cd cmd && go run -race main.go -cluster proxy-backend-conf.toml -stat true -std -log-vl  
-            "args": ["-cluster","proxy-backend-conf.toml","-stat","true","-std", "-log-vl", "5"]
+            //锁bug检查：cd cmd && go run -race main.go -cluster proxy-backend-conf.toml -std -log-vl  
+            "args": ["-cluster","proxy-backend-conf.toml","-std", "-log-vl", "5"]
         }
     ]
 }

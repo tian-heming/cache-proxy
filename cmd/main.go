@@ -7,7 +7,6 @@ import (
 	_ "net/http/pprof" // NOTE: use http pprof
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"mycache/pkg/log"
@@ -20,37 +19,37 @@ import (
 )
 
 var (
-	check bool   //校验配置文件
-	stat  string //pprof
-	// metrics         bool
-	confFile        string //proxy conf
-	clusterConfFile string //backend conf
-	reload          bool   //动态下发配置
+	check bool   //检查配置文件选项
+	pprof string //pprof性能监控
+	// metrics         bool //指标监控开关
+	confFile        string //主城外部配置文件
+	clusterConfFile string //node外部配置文件
+	reload          bool   //配置在线下发开关
 	// slowlogFile       string
 	// slowlogSlowerThan int
 )
 
-type clustersFlag []string
+// type clustersFlag []string
 
-func (c *clustersFlag) String() string {
-	return strings.Join([]string(*c), " ")
-}
+// func (c *clustersFlag) String() string {
+// 	return strings.Join([]string(*c), " ")
+// }
 
-func (c *clustersFlag) Set(n string) error {
-	*c = append(*c, n)
-	return nil
-}
+// func (c *clustersFlag) Set(n string) error {
+// 	*c = append(*c, n)
+// 	return nil
+// }
 
 //cli程序的使用说明
 var usage = func() {
-	fmt.Fprintf(os.Stderr, "Usage of Overlord proxy:\n")
+	fmt.Fprintf(os.Stderr, "Usage of MyCache proxy:\n")
 	flag.PrintDefaults()
 }
 
 func init() {
 	flag.Usage = usage
 	flag.BoolVar(&check, "t", false, "conf file check")
-	flag.StringVar(&stat, "stat", "", "stat listen addr. high priority than conf.stat.")
+	flag.StringVar(&pprof, "pprof", "", "stat listen addr. high priority than conf.pprof")
 	// flag.BoolVar(&metrics, "metrics", false, "proxy support prometheus metrics and reuse stat port.")
 	flag.StringVar(&confFile, "conf", "", "conf file of proxy itself.")
 	flag.StringVar(&clusterConfFile, "cluster", "", "conf file of backend cluster.")
@@ -90,8 +89,8 @@ func main() {
 		go p.MonitorConfChange(clusterConfFile)
 	}
 	// pprof
-	if c.Stat != "" {
-		go http.ListenAndServe(":2110", nil)
+	if c.Pprof != "" {
+		go http.ListenAndServe(c.Pprof, nil)
 		// if c.Proxy.UseMetrics {
 		// 	prom.Init()
 		// } else {
@@ -113,9 +112,10 @@ func parseConfig() (c *proxy.Config, ccs []*proxy.ClusterConfig) {
 		c = proxy.DefaultConfig()
 	}
 	// high priority start
-	if stat != "" {
-		c.Stat = stat
-	}
+	// if stat != "" {
+	// 	c.Stat = stat
+	// }
+
 	// if metrics {
 	// 	c.Proxy.UseMetrics = metrics
 	// }

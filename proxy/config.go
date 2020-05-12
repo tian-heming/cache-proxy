@@ -23,7 +23,7 @@ var (
 
 // Config proxy config.
 type Config struct {
-	Stat string
+	Pprof string `toml:"pprof"`
 	*log.Config
 	Proxy struct {
 		ReadTimeout    int   `toml:"read_timeout"`
@@ -222,6 +222,7 @@ func LoadClusterConf(path string) (ccs []*ClusterConfig, err error) {
 	return
 }
 
+//defaultConfig 伴生默认主程配置
 const defaultConfig = `
 ##################################################
 #                                                #
