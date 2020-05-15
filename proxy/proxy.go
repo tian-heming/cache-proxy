@@ -37,15 +37,15 @@ var (
 //Proxy 定义个Proxy数据存储类型
 type Proxy struct {
 	c          *Config                    //主程配置
-	ccf        string                     //nodes的配置文件名
-	ccs        []*ClusterConfig           //nodes具体配置项
+	ccf        string                     //node配置文件名
+	ccs        []*ClusterConfig           //node多个配置项
 	forwarders map[string]proto.Forwarder //主程指定类型的转发器集合
 	lock       sync.Mutex                 //严格的独占互斥锁
 	// lock       sync.RWMutex //（读写锁：并读串写，且当前写是独占的）
 
 	conns int32 //主程并发的连接计数
 
-	closed bool //主城可用状态
+	closed bool //主程可用状态
 }
 
 //New 依配置新起一个proxy主程
@@ -81,7 +81,7 @@ func (p *Proxy) serve(cc *ClusterConfig) {
 	//转发器绑定到当前服务实例中
 	p.forwarders[cc.Name] = forwarder
 	//为后端配置项创建tcp请求监听器
-	l, err := Listen(cc.ListenProto, cc.ListenAddr)
+	l, err := libnet.Listen(cc.ListenProto, cc.ListenAddr)
 	if err != nil {
 		panic(err)
 	}
@@ -90,6 +90,7 @@ func (p *Proxy) serve(cc *ClusterConfig) {
 	go p.accept(cc, l, forwarder)
 }
 func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwarder) {
+	//阻塞accept方法，接收请求
 	for {
 		//TODO: RACE
 		if p.closed {
@@ -139,7 +140,7 @@ func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwar
 			}
 		}
 		atomic.AddInt32(&p.conns, 1) //原子+1
-		//新建个Handler去处理该连接上的请求
+		//新建个Handler去处理该连接conn上的请求
 		NewHandler(p, cc, conn, forwarder).Handle()
 	}
 }
@@ -158,6 +159,7 @@ func (p *Proxy) Close() error {
 }
 
 // MonitorConfChange reload servers.
+// 监视配置文件的变动
 func (p *Proxy) MonitorConfChange(ccf string) {
 	p.ccf = ccf
 	// start watcher
@@ -167,6 +169,7 @@ func (p *Proxy) MonitorConfChange(ccf string) {
 		return
 	}
 	defer watch.Close()
+	//绝对路径
 	absPath, err := filepath.Abs(filepath.Dir(p.ccf))
 	if err != nil {
 		log.Errorf("failed to get abs path of file:%s and get error:%v", p.ccf, err)

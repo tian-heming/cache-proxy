@@ -32,9 +32,10 @@ func (pc *ProxyConn) Bw() *bufio.Writer {
 	return pc.bw
 }
 
+//
 type proxyConn struct {
-	br        *bufio.Reader //本连接socket的字节数据接收流队列（获取进来）
-	bw        *bufio.Writer //本连接socket的字节数据发送流队列（发出去）
+	br        *bufio.Reader //连接可读
+	bw        *bufio.Writer //连接可写
 	completed bool
 
 	resp *resp //连接传递的具体resp协议数据项
@@ -46,9 +47,9 @@ type proxyConn struct {
 // NewProxyConn creates new redis Encoder and Decoder.
 func NewProxyConn(conn *libnet.Conn, password string) proto.ProxyConn {
 	r := &proxyConn{
-		br:        bufio.NewReader(conn, bufio.Get(1024)), //读缓冲区
-		bw:        bufio.NewWriter(conn),                  //写缓冲区
-		completed: true,                                   //是否完成
+		br:        bufio.NewReader(conn, bufio.Get(1024)),
+		bw:        bufio.NewWriter(conn),
+		completed: true, //是否完成
 		password:  password,
 		resp:      &resp{}, //返回的协议数据
 	}

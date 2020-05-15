@@ -20,11 +20,11 @@ import (
 
 var (
 	check bool   //检查配置文件选项
-	pprof string //pprof性能监控
+	pprof string //pprof程序性能监控
 	// metrics         bool //指标监控开关
 	confFile        string //主城外部配置文件
 	clusterConfFile string //node外部配置文件
-	reload          bool   //配置在线下发开关
+	reload          bool   //监视集群配置文件目录变动
 	// slowlogFile       string
 	// slowlogSlowerThan int
 )
@@ -53,7 +53,7 @@ func init() {
 	// flag.BoolVar(&metrics, "metrics", false, "proxy support prometheus metrics and reuse stat port.")
 	flag.StringVar(&confFile, "conf", "", "conf file of proxy itself.")
 	flag.StringVar(&clusterConfFile, "cluster", "", "conf file of backend cluster.")
-	flag.BoolVar(&reload, "reload", false, "reloading the servers in cluster config file.")
+	flag.BoolVar(&reload, "reload", true, "reloading the servers in cluster config file.")
 	// flag.StringVar(&slowlogFile, "slowlog", "", "slowlog is the file where slowlog output")
 	// flag.IntVar(&slowlogSlowerThan, "slower-than", 0, "slower-than is the microseconds which slowlog must slower than.")
 }

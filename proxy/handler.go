@@ -46,19 +46,19 @@ type Handler struct {
 
 	forwarder proto.Forwarder
 
-	conn *libnet.Conn
-	pc   proto.ProxyConn
+	conn *libnet.Conn    //超时控制连接
+	pc   proto.ProxyConn //编解码功能的 超时控制连接
 
 	closed int32
 	err    error
 }
 
 // NewHandler new a conn handler.
-//创建处理指定编码协议连接的handler对象，真正处理是go这个对象的handle方法（新G处理该方法）
+// 连接的处理方法，处理之前匹配连接的请求协议类型
 func NewHandler(p *Proxy, cc *ClusterConfig, conn net.Conn, forwarder proto.Forwarder) (h *Handler) {
 	h = &Handler{
 		p:         p,         //当前代理服务实例
-		cc:        cc,        //代理的bakend配置
+		cc:        cc,        //代理的node配置
 		forwarder: forwarder, //该类型协议的转发器
 	}
 
@@ -67,7 +67,7 @@ func NewHandler(p *Proxy, cc *ClusterConfig, conn net.Conn, forwarder proto.Forw
 	// 	h.slog = slowlog.Get(cc.Name)
 	// }
 
-	//h.conn 为客户端连接conn包装下超时控制
+	//h.conn 为客户端的连接conn加上rw超时参数（成员实现方法继承）
 	h.conn = libnet.NewConn(conn, time.Second*time.Duration(h.p.c.Proxy.ReadTimeout), time.Second*time.Duration(h.p.c.Proxy.WriteTimeout))
 	// cache type
 	//B case: 进来连接的正常处理调用，
@@ -78,9 +78,10 @@ func NewHandler(p *Proxy, cc *ClusterConfig, conn net.Conn, forwarder proto.Forw
 	// case types.CacheTypeMemcacheBinary:
 	// 	h.pc = mcbin.NewProxyConn(h.conn)
 	case types.CacheTypeRedis:
-		h.pc = redis.NewProxyConn(h.conn, h.cc.Password) //该具有超时控制的新conn业务连接的代理 (redis编码协议的代理)
+		// 复制proxy代理具体协议的conn
+		h.pc = redis.NewProxyConn(h.conn, h.cc.Password) //redis编码协议的代理
 	// case types.CacheTypeRedisCluster:
-	// 	h.pc = rclstr.NewProxyConn(h.conn, forwarder, h.cc.Password) ///该具有超时控制的新conn业务连接的代理 (rediscluster编码协议的代理);redis单实例和redis cluster的编解码协议略有增减
+	// 	h.pc = rclstr.NewProxyConn(h.conn, forwarder, h.cc.Password) //rediscluster编码协议的代理;redis单实例和redis cluster的编解码协议略有增减
 	default:
 		panic(types.ErrNoSupportCacheType)
 	}

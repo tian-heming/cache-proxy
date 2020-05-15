@@ -1,4 +1,4 @@
-package proxy
+package net
 
 import (
 	"net"
@@ -6,8 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 )
-
-//listen.go # listen相关工具方法
 
 // Listen listen.
 func Listen(proto string, addr string) (net.Listener, error) {

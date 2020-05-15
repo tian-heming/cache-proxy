@@ -236,7 +236,9 @@ func (c *connections) init(addrs, ans []string, ws []int, alias bool, oldNcps ma
 			c.nodePipe[toAddr] = cnn
 			copyed[toAddr] = true
 		} else {
+			//往node的连接通道
 			c.nodePipe[toAddr] = proto.NewNodeConnPipe(c.cc.NodeConnections, func() proto.NodeConn {
+				//新建node连接
 				return newNodeConn(c.cc, toAddr)
 			})
 		}
@@ -279,6 +281,7 @@ var pingSleepTime = func(t bool) time.Duration {
 	return time.Second
 }
 
+// 处理ping
 func (c *connections) processPing(p *pinger) {
 	var (
 		err error

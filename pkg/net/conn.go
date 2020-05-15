@@ -11,7 +11,7 @@ var (
 	ErrConnClosed = errors.New("connection is closed")
 )
 
-// Conn 系统级net.Conn接口内嵌
+// Conn 系统级net.Conn接口实例的内嵌
 // add:增加一些超时设置
 type Conn struct {
 	addr string
