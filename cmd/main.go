@@ -50,7 +50,7 @@ func init() {
 	flag.Usage = usage
 	flag.BoolVar(&check, "t", false, "conf file check")
 	flag.StringVar(&pprof, "pprof", "", "stat listen addr. high priority than conf.pprof")
-	// flag.BoolVar(&metrics, "metrics", false, "proxy support prometheus metrics and reuse stat port.")
+	// flag.BoolVar(&metrics, "metrics", false, "proxy support prometheus metrics and reuse pprof port.")
 	flag.StringVar(&confFile, "conf", "", "conf file of proxy itself.")
 	flag.StringVar(&clusterConfFile, "cluster", "", "conf file of backend cluster.")
 	flag.BoolVar(&reload, "reload", true, "reloading the servers in cluster config file.")
@@ -84,12 +84,15 @@ func main() {
 		panic(err)
 	}
 	defer p.Close()
+	//本线程去监听，新线程去处理proxy请求（且是非阻塞去建立tcp连接-epool）
 	p.Serve(ccs)
 	if reload {
+		//新线程去监视
 		go p.MonitorConfChange(clusterConfFile)
 	}
 	// pprof
 	if c.Pprof != "" {
+		//新协程去监听处理采集请求
 		go http.ListenAndServe(c.Pprof, nil)
 		// if c.Proxy.UseMetrics {
 		// 	prom.Init()

@@ -18,13 +18,13 @@ const (
 //服务器节点信息
 type nodeHash struct {
 	node string //服务器别名
-	hash uint   //hash服务器的区间值之一
+	hash uint   //hash服务器的区间值之一  4字节
 }
 
 //所有服务器节点信息
 type tickArray struct {
-	nodes  []nodeHash
-	length int
+	nodes  []nodeHash //64个
+	length int        //320
 }
 
 func (p *tickArray) Len() int           { return p.length }
@@ -34,8 +34,8 @@ func (p *tickArray) Sort()              { sort.Sort(p) }
 
 // HashRing ketama hash ring的数据结构.
 type HashRing struct {
-	nodes []string     //node 实例别名
-	spots []int        //权重weight
+	nodes []string     //node 实例别名 ["redis2","redis1"]
+	spots []int        //权重weight [1,1]
 	ticks atomic.Value //存放素所有节点信息（节点名，节点区域hash值之一）
 	lock  sync.Mutex
 	hash  func([]byte) uint //该环的hash函数

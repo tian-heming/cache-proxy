@@ -71,7 +71,7 @@ type resp struct {
 	data []byte // 非数组类型的字节流数据
 
 	array     []*resp // 数组类型respArray的数据结构，内嵌resp对象自己，可能是任意类型的resp
-	arraySize int     //数组类型respArray的大小,直接复用这个值，省去对array数据字节流的收字节数判断
+	arraySize int     // 计数array里面组合的redis命令数量
 }
 
 //重置一个resp对象

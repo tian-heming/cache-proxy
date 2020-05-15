@@ -37,15 +37,15 @@ var (
 //Proxy 定义个Proxy数据存储类型
 type Proxy struct {
 	c          *Config                    //主程配置
-	ccf        string                     //node配置文件名
-	ccs        []*ClusterConfig           //node多个配置项
+	ccf        string                     //node配置文件名 "proxy-backend-conf.toml"
+	ccs        []*ClusterConfig           //node多个配置项 1
 	forwarders map[string]proto.Forwarder //主程指定类型的转发器集合
 	lock       sync.Mutex                 //严格的独占互斥锁
 	// lock       sync.RWMutex //（读写锁：并读串写，且当前写是独占的）
 
-	conns int32 //主程并发的连接计数
+	conns int32 //主程并发的连接计数 1
 
-	closed bool //主程可用状态
+	closed bool //主程可用状态 false
 }
 
 //New 依配置新起一个proxy主程

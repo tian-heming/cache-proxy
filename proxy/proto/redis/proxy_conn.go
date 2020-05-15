@@ -268,12 +268,15 @@ func (pc *proxyConn) CmdCheck(m *proto.Message) (isSpecialCmd bool, err error) {
 		return isSpecialCmd, ErrBadAssert
 	}
 
+	//不支持的命令
 	if !req.IsSupport() {
 		err = pc.Bw().Write([]byte(fmt.Sprintf("-ERR unknown command `%s`, with args beginning with:\r\n", req.CmdString())))
 		return
 	}
 
+	//不是特殊命令
 	if !req.IsSpecial() {
+		//没有带认证auth
 		if !pc.authorized {
 			err = pc.Bw().Write(noAuthBytes)
 			return
@@ -281,13 +284,15 @@ func (pc *proxyConn) CmdCheck(m *proto.Message) (isSpecialCmd bool, err error) {
 		return
 	}
 
+	//特殊命令，auth，ping，quit，command
 	if req.IsSpecial() {
 		isSpecialCmd = true
 		reqData := req.resp.array[0].data
+		//字节流判断 消息组里第一个命令是否是auth命令
 		if bytes.Equal(reqData, cmdAuthBytes) {
 			if bytes.Equal(req.Key(), []byte(pc.password)) {
 				pc.authorized = true
-				err = pc.Bw().Write(justOkBytes)
+				err = pc.Bw().Write(justOkBytes) //返回客户端conn
 			} else {
 				pc.authorized = false
 				err = pc.Bw().Write(invalidPasswordBytes)
@@ -305,8 +310,9 @@ func (pc *proxyConn) CmdCheck(m *proto.Message) (isSpecialCmd bool, err error) {
 			err = pc.Bw().Write([]byte(":-1\r\n"))
 		}
 	} else {
+		//常规命令时，校验认证
 		if !pc.authorized {
-			err = pc.Bw().Write(noAuthBytes)
+			err = pc.Bw().Write(noAuthBytes) //未认证直接返回
 		}
 	}
 

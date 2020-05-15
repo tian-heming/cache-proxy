@@ -98,16 +98,16 @@ func (h *Handler) Handle() {
 //新G去处理这个任务
 func (h *Handler) handle() {
 	var (
-		messages []*proto.Message    //保存resp消息流
-		msgs     []*proto.Message    //保存resp消息这个需要共享，所以定义两个一样的类型
-		wg       = &sync.WaitGroup{} //并发同步组
+		messages []*proto.Message    //存放要接收的多个消息
+		msgs     []*proto.Message    //存放待发送的多个消息
+		wg       = &sync.WaitGroup{} //消息并发时G控制组
 		err      error
 	)
-	//分配最大消息实例
+	//分配最大并发对象，一开始是0
 	messages = h.allocMaxConcurrent(wg, messages, len(msgs))
 	for {
 		// 1. read until limit or error
-		// 解码连接的数据流放到messages
+		// 解码连接的数据流放到messages里
 		if msgs, err = h.pc.Decode(messages); err != nil {
 			//解码失败时 返回默认的处理写回到连接（终止处理连接返回）
 			h.deferHandle(messages, err)
@@ -116,11 +116,12 @@ func (h *Handler) handle() {
 
 		// 2. handle special command
 		isSpecialCmd := false
+		//存在待发送消息
 		if len(msgs) > 0 {
 			//检查msgs里是否有特殊cmd
 			isSpecialCmd, err = h.pc.CmdCheck(msgs[0])
 			if err != nil {
-				//检测不通过，则返回默认的处理 写回到连接（终止处理连接返回）
+				//预检不通过，则返回默认的处理 写回到连接（终止处理连接返回）
 				h.pc.Flush()
 				h.deferHandle(messages, err)
 				return

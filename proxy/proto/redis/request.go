@@ -50,9 +50,9 @@ func init() {
 
 // errors
 var (
-	ErrBadAssert  = errs.New("bad assert for redis")
-	ErrBadCount   = errs.New("bad count number")
-	ErrBadRequest = errs.New("bad request")
+	ErrBadAssert  = errs.New("bad assert for redis") //类型断言错误
+	ErrBadCount   = errs.New("bad count number")     //数量错误
+	ErrBadRequest = errs.New("bad request")          //请求失败
 )
 
 // mergeType is used to decript the merge operation.
@@ -132,6 +132,7 @@ func (r *Request) Key() []byte {
 	k := r.resp.array[1]
 	// SUPPORT EVAL command
 	const evalArgsMinCount int = 4
+	//判断是否是 执行脚本命令
 	if r.resp.arraySize >= evalArgsMinCount {
 		if bytes.Equal(r.resp.array[0].data, cmdEvalBytes) {
 			// find the 4th key with index 3

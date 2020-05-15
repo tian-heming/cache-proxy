@@ -23,13 +23,13 @@ var (
 
 // Config proxy config.
 type Config struct {
-	Pprof string `toml:"pprof"`
-	*log.Config
-	Proxy struct {
-		ReadTimeout    int   `toml:"read_timeout"`
-		WriteTimeout   int   `toml:"write_timeout"`
-		MaxConnections int32 `toml:"max_connections"`
-		UseMetrics     bool  `toml:"use_metrics"`
+	Pprof       string `toml:"pprof"` //"0.0.0.0:2110"
+	*log.Config        //stdout:true,debug:false,logvl：5
+	Proxy       struct {
+		ReadTimeout    int   `toml:"read_timeout"`    //0
+		WriteTimeout   int   `toml:"write_timeout"`   //0
+		MaxConnections int32 `toml:"max_connections"` //proxy负载的最大连接数：无限
+		UseMetrics     bool  `toml:"use_metrics"`     //true
 	}
 }
 
@@ -62,24 +62,24 @@ func (c *Config) Validate() error {
 
 // ClusterConfig cluster config.
 type ClusterConfig struct {
-	Name             string
-	HashMethod       string          `toml:"hash_method"`
-	HashDistribution string          `toml:"hash_distribution"`
-	HashTag          string          `toml:"hash_tag"`
-	CacheType        types.CacheType `toml:"cache_type"`
-	ListenProto      string          `toml:"listen_proto"`
-	ListenAddr       string          `toml:"listen_addr"`
-	RedisAuth        string          `toml:"redis_auth"`
-	DialTimeout      int             `toml:"dial_timeout"`
-	ReadTimeout      int             `toml:"read_timeout"`
-	WriteTimeout     int             `toml:"write_timeout"`
-	NodeConnections  int32           `toml:"node_connections"`
-	PingFailLimit    int             `toml:"ping_fail_limit"`
-	PingAutoEject    bool            `toml:"ping_auto_eject"`
+	Name             string          //"test-redis"
+	HashMethod       string          `toml:"hash_method"`       //"fnv1a_64"
+	HashDistribution string          `toml:"hash_distribution"` //"ketama"
+	HashTag          string          `toml:"hash_tag"`          //”.“
+	CacheType        types.CacheType `toml:"cache_type"`        //"redis"
+	ListenProto      string          `toml:"listen_proto"`      //"tcp"
+	ListenAddr       string          `toml:"listen_addr"`       //"0.0.0.0:26379"
+	RedisAuth        string          `toml:"redis_auth"`        //""
+	DialTimeout      int             `toml:"dial_timeout"`      //1000
+	ReadTimeout      int             `toml:"read_timeout"`      //1000
+	WriteTimeout     int             `toml:"write_timeout"`     //1000
+	NodeConnections  int32           `toml:"node_connections"`  //2
+	PingFailLimit    int             `toml:"ping_fail_limit"`   //3
+	PingAutoEject    bool            `toml:"ping_auto_eject"`   //false
 	// SlowlogSlowerThan int             `toml:"slowlog_slower_than"`
 
-	Servers  []string `toml:"servers"`
-	Password string   `toml:"password"`
+	Servers  []string `toml:"servers"`  //"127.0.0.1:6379:1 redis2","127.0.0.1:6378:1 redis1"
+	Password string   `toml:"password"` //""
 }
 
 // ValidateStandalone validate redis/memcache address is valid or not

@@ -74,9 +74,9 @@ func NewForwarder(cc *ClusterConfig) proto.Forwarder {
 // defaultForwarder implement the default hashring router and msgbatch.
 type defaultForwarder struct {
 	cc      *ClusterConfig
-	hashTag []byte
-	conns   atomic.Value
-	state   int32
+	hashTag []byte       // 46->ascii：“.”
+	conns   atomic.Value //proxy-conn连接对象
+	state   int32        //0
 }
 
 // newDefaultForwarder must combinf.
@@ -196,9 +196,9 @@ type connections struct {
 	cancel context.CancelFunc
 	// recording alias to real node
 	cc         *ClusterConfig
-	alias      bool
-	addrs, ans []string
-	ws         []int
+	alias      bool     //true
+	addrs, ans []string //addrs:"127.0.0.1:6379","127.0.0.1:6378" | ans: "redis2","redis1"
+	ws         []int    // [1,1]
 	aliasMap   map[string]string
 	nodePipe   map[string]*proto.NodeConnPipe
 	ring       *hashkit.HashRing //hash槽
