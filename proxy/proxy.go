@@ -86,7 +86,7 @@ func (p *Proxy) serve(cc *ClusterConfig) {
 		panic(err)
 	}
 	log.Infof("mycache proxy cluster[%s] addr(%s) start listening", cc.Name, cc.ListenAddr)
-	//进入groutine（类似fork出子线程）领域，注意此后的并发写问题
+	//进入groutine（类似fork出子线程）领域，注意此后的并发读写问题
 	go p.accept(cc, l, forwarder)
 }
 func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwarder) {
@@ -108,8 +108,9 @@ func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwar
 			log.Errorf("cluster(%s) addr(%s) accept connection error:%+v", cc.Name, cc.ListenAddr, err)
 			continue
 		}
-		//检测最大并发数
+		//检查proxy的并发连接数设置，如果不是无限
 		if p.c.Proxy.MaxConnections > 0 {
+			//去比较已建立的并发连接数是否大于设定的数
 			if conns := atomic.LoadInt32(&p.conns); conns > p.c.Proxy.MaxConnections {
 				// cache type
 				// A case:不处理的连接处理（给错误信息返回即可，不进入正常处理调用）
@@ -146,6 +147,7 @@ func (p *Proxy) accept(cc *ClusterConfig, l net.Listener, forwarder proto.Forwar
 }
 
 // Close close proxy resource.
+// 关闭proxy主程持有的预建连接
 func (p *Proxy) Close() error {
 	if p.closed {
 		return nil

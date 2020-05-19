@@ -44,10 +44,10 @@ type Handler struct {
 	// slog       slowlog.Handler
 	// slowerThan time.Duration
 
-	forwarder proto.Forwarder
+	forwarder proto.Forwarder //
 
-	conn *libnet.Conn    //超时控制连接
-	pc   proto.ProxyConn //编解码功能的 超时控制连接
+	conn *libnet.Conn    //超时控制终端连接 tcp层
+	pc   proto.ProxyConn //封装编解码功能的 超时控制终端连接 app层
 
 	closed int32
 	err    error
@@ -79,7 +79,7 @@ func NewHandler(p *Proxy, cc *ClusterConfig, conn net.Conn, forwarder proto.Forw
 	// 	h.pc = mcbin.NewProxyConn(h.conn)
 	case types.CacheTypeRedis:
 		// 复制proxy代理具体协议的conn
-		h.pc = redis.NewProxyConn(h.conn, h.cc.Password) //redis编码协议的代理
+		h.pc = redis.NewProxyConn(h.conn, h.cc.Password) //redis编码协议的代理，并对该连接认证
 	// case types.CacheTypeRedisCluster:
 	// 	h.pc = rclstr.NewProxyConn(h.conn, forwarder, h.cc.Password) //rediscluster编码协议的代理;redis单实例和redis cluster的编解码协议略有增减
 	default:
@@ -103,37 +103,40 @@ func (h *Handler) handle() {
 		wg       = &sync.WaitGroup{} //消息并发时G控制组
 		err      error
 	)
-	//分配最大并发对象，一开始是0
+	//分配最大message并发对象，一开始是默认2个并发对象【只分配内存，没有真实数据】
 	messages = h.allocMaxConcurrent(wg, messages, len(msgs))
+	//持续读写流
 	for {
 		// 1. read until limit or error
-		// 解码连接的数据流放到messages里
+		// 读取流数据解码到分配好的message对象空间
 		if msgs, err = h.pc.Decode(messages); err != nil {
-			//解码失败时 返回默认的处理写回到连接（终止处理连接返回）
+			//解码错误 走默认处理流程（回收资源，关闭连接，记录日志）
 			h.deferHandle(messages, err)
 			return
 		}
 
-		// 2. handle special command
+		// 2. handle special command: AUTH,PING,QUIT,COMMAND
 		isSpecialCmd := false
-		//存在待发送消息
+		//成功解码到message数据
 		if len(msgs) > 0 {
-			//检查msgs里是否有特殊cmd
+			//检查msgs里是否有特殊cmd-PING
 			isSpecialCmd, err = h.pc.CmdCheck(msgs[0])
 			if err != nil {
-				//预检不通过，则返回默认的处理 写回到连接（终止处理连接返回）
+				//预检不通过，清空写缓冲区
 				h.pc.Flush()
+				//走默认处理流程
 				h.deferHandle(messages, err)
 				return
 			}
 		}
 
-		//检测该请求是否带有认证
+		//转发带认证的常规命令到forwarder的node连接??? 仅仅是proxy看下？？
 		if !isSpecialCmd && h.pc.IsAuthorized() {
 			// 3. send to cluster
-			//使用转发器里内置的conn发送所有消息到backend服务器
+			//使用转发器里内置的conn发送所有消息到backend node服务器
 			h.forwarder.Forward(msgs)
-			//阻塞知道每个msgs都执行done()了，在继续往下执行
+
+			//阻塞直到每个msgs都执行done()了，在继续往下执行
 			wg.Wait() //阻塞处理 知道消息都发送到input chan里-作业完成，并标记每个msg的MarkStartPipe
 
 			// 4. encode
@@ -167,7 +170,6 @@ func (h *Handler) handle() {
 		// 	}
 		// }
 		//发送完 就重置
-		//msg的重置会影响msgs
 		for _, msg := range msgs {
 			msg.ResetSubs() //先重置该消息的所有子消息
 			msg.Reset()     //再重置消息自己
@@ -178,7 +180,7 @@ func (h *Handler) handle() {
 	}
 }
 
-// 分配消息流内存空间，并给每个msg加个共享的并发阻塞器wg
+// 分配并发要求的内存空间，并给每个msg加个共享的并发阻塞器wg
 func (h *Handler) allocMaxConcurrent(wg *sync.WaitGroup, msgs []*proto.Message, lastCount int) []*proto.Message {
 	var alloc int
 	if msgsLength := len(msgs); msgsLength == 0 {
@@ -201,12 +203,14 @@ func (h *Handler) allocMaxConcurrent(wg *sync.WaitGroup, msgs []*proto.Message, 
 	return msgs
 }
 
+//异常时按deferHandle处理返回
 func (h *Handler) deferHandle(msgs []*proto.Message, err error) {
 	proto.PutMsgs(msgs)
 	h.closeWithError(err)
 	return
 }
 
+//错位时关闭终端连接
 func (h *Handler) closeWithError(err error) {
 	if atomic.CompareAndSwapInt32(&h.closed, handlerOpening, handlerClosed) {
 		h.err = err

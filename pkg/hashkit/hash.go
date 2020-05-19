@@ -18,6 +18,7 @@ const (
 )
 
 // NewRing will create new and need init method.
+// 新建hash 环
 func NewRing(des, method string) *HashRing {
 
 	var hash func([]byte) uint

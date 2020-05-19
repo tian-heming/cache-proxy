@@ -24,16 +24,16 @@ func (m mockAddr) String() string {
 
 //MockConn  mock tcp链接
 type MockConn struct {
-	addr   mockAddr
-	rbuf   *bytes.Buffer
-	Wbuf   *bytes.Buffer
-	data   []byte
-	repeat int
+	addr   mockAddr      //请求发起者的地址
+	rbuf   *bytes.Buffer //读缓冲区
+	Wbuf   *bytes.Buffer //写缓冲区
+	data   []byte        //连接的载荷数据
+	repeat int           //重传次数
 	Err    error
 	closed int32
 }
 
-//读连接
+//读连接数据到b
 func (m *MockConn) Read(b []byte) (n int, err error) {
 	//检查链接是否关闭
 	if atomic.LoadInt32(&m.closed) == stateClosed {
@@ -45,13 +45,13 @@ func (m *MockConn) Read(b []byte) (n int, err error) {
 		err = m.Err
 		return
 	}
-	//是否有数据多次写设定
+	//重传次数
 	if m.repeat > 0 {
-		//数据写入连接的rbuf里
+		//把连接m的数据写入连接的rbuf读缓冲区里
 		m.rbuf.Write(m.data)
 		m.repeat--
 	}
-	//从连接的rbuf里读取len(b)的字节数据，返回读取字节数
+	//从连接的rbuf里读取len(b)的字节数据到b里，并返回读取的字节数
 	return m.rbuf.Read(b)
 }
 
@@ -97,19 +97,19 @@ func (m *MockConn) SetReadDeadline(t time.Time) error { return nil }
 //SetWriteDeadline def
 func (m *MockConn) SetWriteDeadline(t time.Time) error { return nil }
 
-//CreateMockConn 模拟一个proxy的上游tcp连接（client tcp连接--->proxy）
+//CreateMockConn 模拟一个proxy的上游tcp连接（backend node tcp连接--->proxy）
 func CreateMockConn(data []byte, r int) net.Conn {
 	mconn := &MockConn{
 		addr:   "127.0.0.1:12345",
-		rbuf:   bytes.NewBuffer(nil),
-		Wbuf:   new(bytes.Buffer),
-		data:   data, //模拟连接上的数据存储位置
-		repeat: r,
+		rbuf:   bytes.NewBuffer(nil), //连接上的读缓冲区
+		Wbuf:   new(bytes.Buffer),    //连接上的写缓冲区
+		data:   data,                 //模拟连接上的数据流
+		repeat: r,                    //连接重试次数
 	}
 	return mconn
 }
 
-//CreateMockDownStremConn  模拟一个proxy的下游tcp连接（proxy<---backend tcp conn）
+//CreateMockDownStremConn  模拟一个proxy的下游客户端的tcp连接（frontend tcp conn-->proxy）
 func CreateMockDownStremConn() (net.Conn, *bytes.Buffer) {
 	buf := new(bytes.Buffer)
 	mconn := &MockConn{

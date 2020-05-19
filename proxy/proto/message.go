@@ -19,6 +19,7 @@ var msgPool = &sync.Pool{
 }
 
 // GetMsgs alloc a slice to the message
+// 初始化message组
 func GetMsgs(n int, caps ...int) []*Message {
 	largs := len(caps)
 	if largs > 1 {
@@ -31,6 +32,7 @@ func GetMsgs(n int, caps ...int) []*Message {
 		msgs = make([]*Message, n, caps[0])
 	}
 	for idx := range msgs {
+		// 给msgs预分配好n个Message对象（这里16个）
 		msgs[idx] = getMsg()
 	}
 	return msgs
@@ -63,16 +65,16 @@ func putMsg(m *Message) {
 
 // Message read from client.
 type Message struct {
-	Type types.CacheType
+	Type types.CacheType // 流里的消息类型 "redis"
 
-	req    []Request
-	reqNum int        //消息个数
+	req    []Request  //消息里封装了多个req请求，req请求里封装了resp协议请求体和resp响应体，请求体和响应体里有具体的载荷数据
+	reqNum int        //message封装的req里真实请求的个数
 	subs   []*Message //批量消息：这个消息是发送多个消息
 	wg     *sync.WaitGroup
 
 	// Start Time, Write Time, ReadTime, EndTime, Start Pipe Time, End Pipe Time, Start Pipe Time, End Pipe Time
 	st, wt, rt, et, spt, ept, sit, eit time.Time
-	addr                               string
+	addr                               string //""
 	err                                error
 }
 

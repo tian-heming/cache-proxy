@@ -15,10 +15,13 @@ const (
 	_maxHostLen      = 64  //服务实例主机名最大长度 ”redis-0“
 )
 
+// hash环：https://www.twblogs.net/a/5eb007e886ec4d7b5300d51a
+// 一致性hash：https://www.jianshu.com/p/735a3d4789fc
+// 资料：https://cloud.tencent.com/developer/article/1488073
 //服务器节点信息
 type nodeHash struct {
 	node string //服务器别名
-	hash uint   //hash服务器的区间值之一  4字节
+	hash uint   //hash服务器的区间值之一  4字节（uint32）node hash值
 }
 
 //所有服务器节点信息
@@ -35,8 +38,8 @@ func (p *tickArray) Sort()              { sort.Sort(p) }
 // HashRing ketama hash ring的数据结构.
 type HashRing struct {
 	nodes []string     //node 实例别名 ["redis2","redis1"]
-	spots []int        //权重weight [1,1]
-	ticks atomic.Value //存放素所有节点信息（节点名，节点区域hash值之一）
+	spots []int        //权重weight [1,1] int
+	ticks atomic.Value //存放所有虚拟节点信息（节点名，节点区域hash值之一）
 	lock  sync.Mutex
 	hash  func([]byte) uint //该环的hash函数
 }
@@ -50,6 +53,7 @@ func Ketama() (h *HashRing) {
 }
 
 // newRingWithHash new a hash ring with a hash func.
+//生成指定hash函数的散列ring，默认hashFnv1a64散列方法
 func newRingWithHash(hash func([]byte) uint) (h *HashRing) {
 	h = Ketama()
 	h.hash = hash

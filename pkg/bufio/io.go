@@ -19,8 +19,8 @@ var (
 )
 
 type Reader struct {
-	rd  io.Reader
-	b   *Buffer
+	rd  io.Reader //存放可读对象
+	b   *Buffer   //内置缓冲区
 	err error
 }
 
@@ -28,8 +28,12 @@ func NewReader(rd io.Reader, b *Buffer) *Reader {
 	return &Reader{rd: rd, b: b}
 }
 
+//读取r.rd里连接上的数据到r.b里
 func (r *Reader) fill() error {
+	// 把r.rd里的连接上的数据追加填充到b.buf里（从r.b.buf[r.b.w:]位置开始填充）
+	//返回填充的字节数n
 	n, err := r.rd.Read(r.b.buf[r.b.w:])
+	//移动b缓冲区的写标识
 	r.b.w += n
 	if err != nil {
 		r.err = err
@@ -45,6 +49,7 @@ func (r *Reader) Advance(n int) {
 	r.b.Advance(n)
 }
 
+//Mark 读取的标记
 func (r *Reader) Mark() int {
 	return r.b.r
 }
@@ -64,12 +69,19 @@ func (r *Reader) Read() error {
 	if r.err != nil {
 		return r.err
 	}
+	//如果b缓冲区中未读的数据量等于了本身缓存总容量
+	//缓存已满，
 	if r.b.buffered() == r.b.len() {
+		//对b缓冲区buf切片进去二倍的扩容
 		r.b.grow()
 	}
+	//如果b缓冲区中已写的数据量等于了本身缓存总容量
+	//写缓存满，就把已读的丢弃，缩小缓存占用
 	if r.b.w == r.b.len() {
+		//对b缓冲区buf切片进行收缩
 		r.b.shrink()
 	}
+	//填充满缓冲区r.buf
 	if err := r.fill(); err != io.EOF {
 		return err
 	}
@@ -81,13 +93,17 @@ func (r *Reader) ReadLine() (line []byte, err error) {
 	if r.err != nil {
 		return nil, r.err
 	}
+	//在可读数据段里找\n\r字节值的位置
 	idx := bytes.Index(r.b.buf[r.b.r:r.b.w], crlfBytes)
+	//没找到
 	if idx == -1 {
 		line = nil
 		err = ErrBufferFull
 		return
 	}
+	//读取完整的一行数据line
 	line = r.b.buf[r.b.r : r.b.r+idx+2]
+	//移动读取标识，包含\n\r 分隔符
 	r.b.r += idx + 2
 	return
 }

@@ -68,9 +68,9 @@ const (
 
 // Request is the type of a complete redis command
 type Request struct {
-	resp  *resp //请求
-	reply *resp //响应
-	mType mergeType
+	resp  *resp     //请求体resp协议项
+	reply *resp     //响应体resp协议项
+	mType mergeType //消息合并？？
 }
 
 var reqPool = &sync.Pool{
@@ -103,11 +103,13 @@ func newReq() *Request {
 // }
 
 // CmdString get the cmd
+//获取cmd的字符串形式
 func (r *Request) CmdString() string {
 	return string(r.Cmd())
 }
 
 // Cmd get the cmd
+//获取cmd的字节流形式
 func (r *Request) Cmd() []byte {
 	if r.resp.arraySize < 1 {
 		return emptyBytes
@@ -121,6 +123,7 @@ func (r *Request) Cmd() []byte {
 }
 
 // Key impl the proto.protoRequest and get the Key of redis
+// 获取cmd 作用的key的字节流形式
 func (r *Request) Key() []byte {
 	if r.resp.arraySize < 1 {
 		return emptyBytes
@@ -132,7 +135,7 @@ func (r *Request) Key() []byte {
 	k := r.resp.array[1]
 	// SUPPORT EVAL command
 	const evalArgsMinCount int = 4
-	//判断是否是 执行脚本命令
+	//判断是否是 执行脚本指令
 	if r.resp.arraySize >= evalArgsMinCount {
 		if bytes.Equal(r.resp.array[0].data, cmdEvalBytes) {
 			// find the 4th key with index 3
@@ -148,6 +151,7 @@ func (r *Request) Key() []byte {
 }
 
 // Put the resource back to pool
+// 重置request数据结构放回req对象零时池里
 func (r *Request) Put() {
 	r.resp.reset()
 	r.reply.reset()
@@ -156,11 +160,13 @@ func (r *Request) Put() {
 }
 
 // RESP return request resp.
+//返回resp请求体
 func (r *Request) RESP() *RESP {
 	return r.resp
 }
 
 // Reply return request reply.
+//返回resp的响应体
 func (r *Request) Reply() *RESP {
 	return r.reply
 }
@@ -169,6 +175,7 @@ func (r *Request) Reply() *RESP {
 //
 // NOTE: use string([]byte) as a map key, it is very specific!!!
 // https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html#using_byte_as_a_map_key
+// 检查请求的指令是否受支持的指令
 func (r *Request) IsSupport() bool {
 	if r.resp.arraySize < 1 {
 		return false
@@ -181,6 +188,7 @@ func (r *Request) IsSupport() bool {
 //
 // NOTE: use string([]byte) as a map key, it is very specific!!!
 // https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html#using_byte_as_a_map_key
+//检查请求的指令是否是控制类指令
 func (r *Request) IsCtl() bool {
 	if r.resp.arraySize < 1 {
 		return false
@@ -193,6 +201,7 @@ func (r *Request) IsCtl() bool {
 //
 // NOTE: use string([]byte) as a map key, it is very specific!!!
 // https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html#using_byte_as_a_map_key
+// 检查请求的指令是否是特殊指令
 func (r *Request) IsSpecial() bool {
 	if r.resp.arraySize < 1 {
 		return false

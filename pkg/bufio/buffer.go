@@ -46,7 +46,7 @@ func initBufPool(idx int) {
 //Buffer 缓冲器
 type Buffer struct {
 	buf  []byte
-	r, w int //r 缓冲区读过的字节量计数，w 缓冲区总共写的字节量计数
+	r, w int //r 缓冲区读过的字节量计数，w 缓冲区总共写的字节量计数，这两个参数来标识buf里的数据读写情况
 }
 
 //NewBuffer 新建缓冲器
@@ -77,13 +77,17 @@ func (b *Buffer) Advance(n int) {
 	b.r += n
 }
 
-//缓冲器容量收缩，释放额外的内存
+//缓冲器容量收缩，释放已读数据的内存占用
 func (b *Buffer) shrink() {
+	//本就未读过，则忽略收缩
 	if b.r == 0 {
 		return
 	}
+	//未读的数据段 收缩到一个新的b.buf里
 	copy(b.buf, b.buf[b.r:b.w])
+	//b的数据段为"写-已读"的段
 	b.w -= b.r
+	//标记该缓冲区为未读
 	b.r = 0
 }
 

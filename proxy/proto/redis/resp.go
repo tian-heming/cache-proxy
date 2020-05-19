@@ -16,13 +16,14 @@ import (
 type respType = byte
 
 //定义redis resp的基础数据类型标识
+
 const (
-	respUnknown respType = '0'
-	respError   respType = '-'
-	respString  respType = '+'
-	respInt     respType = ':'
-	respBulk    respType = '$'
-	respArray   respType = '*'
+	respUnknown respType = '0' //resp未知数据
+	respError   respType = '-' //resp错误数据
+	respString  respType = '+' //resp单行字符串数据
+	respInt     respType = ':' //resp数值数据
+	respBulk    respType = '$' //resp多行字符串数据(包含回车换行的字符串)
+	respArray   respType = '*' //RESP数组数据
 )
 
 //定义resp的基础数据的字节流
@@ -66,12 +67,12 @@ func (r *RESP) Encode(w *bufio.Writer) (err error) {
 
 //redis resp协议对象
 type resp struct {
-	respType respType //resp哪种数据类型
+	respType respType //resp哪种数据类型 42：'*' resp数组
 
-	data []byte // 非数组类型的字节流数据
+	data []byte // 非数组类型的字节流数据 49: "1"
 
 	array     []*resp // 数组类型respArray的数据结构，内嵌resp对象自己，可能是任意类型的resp
-	arraySize int     // 计数array里面组合的redis命令数量
+	arraySize int     // 计数array里面组合的redis命令数量, 1
 }
 
 //重置一个resp对象
@@ -105,14 +106,15 @@ func (r *resp) next() *resp {
 	return subResp
 }
 
+//解码br里连接数据到r里
 func (r *resp) decode(br *bufio.Reader) (err error) {
 	r.reset()
 	// start read
-	line, err := br.ReadLine() //逐行读缓冲器（\r\n分割为行）
+	line, err := br.ReadLine() //逐行读缓冲器到line里（\r\n分割）
 	if err != nil {
 		return err
 	}
-	respType := line[0] //首字节为数据类型标识位
+	respType := line[0] //首字节数值为数据类型标识位，42|51|36这些
 	r.respType = respType
 	switch respType { //按resp的编码协议去拆解这些二进制-ASCII数值数据
 	case respString, respInt, respError:
@@ -176,7 +178,7 @@ func (r *resp) decodeBulk(line []byte, br *bufio.Reader) (err error) {
 
 func (r *resp) decodeArray(line []byte, br *bufio.Reader) (err error) {
 	ls := len(line)
-	arrayLengthBytes := line[1 : ls-2]
+	arrayLengthBytes := line[1 : ls-2] //截取数据位（去除 头标识位和尾回车换行位）
 	arrayLength, err := conv.Btoi(arrayLengthBytes)
 	if err != nil {
 		return

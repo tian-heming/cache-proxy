@@ -34,14 +34,14 @@ func (pc *ProxyConn) Bw() *bufio.Writer {
 
 //
 type proxyConn struct {
-	br        *bufio.Reader //连接可读
-	bw        *bufio.Writer //连接可写
-	completed bool
+	br        *bufio.Reader //终端连接上的读缓存区（client-->proxy读方向请求数据的缓冲区）
+	bw        *bufio.Writer //终端连接上的写缓冲区 （client<--proxy写方向回复数据的缓冲区）
+	completed bool          //br缓存是否可读
 
-	resp *resp //连接传递的具体resp协议数据项
+	resp *resp //br里缓冲区数据反序列化结构对象（流-->struct）
 
-	authorized bool
-	password   string
+	authorized bool   //proxy对客户端连接的认证
+	password   string //密码
 }
 
 // NewProxyConn creates new redis Encoder and Decoder.
@@ -49,7 +49,7 @@ func NewProxyConn(conn *libnet.Conn, password string) proto.ProxyConn {
 	r := &proxyConn{
 		br:        bufio.NewReader(conn, bufio.Get(1024)),
 		bw:        bufio.NewWriter(conn),
-		completed: true, //是否完成
+		completed: true, //连接代理已就绪
 		password:  password,
 		resp:      &resp{}, //返回的协议数据
 	}
@@ -61,14 +61,20 @@ func NewProxyConn(conn *libnet.Conn, password string) proto.ProxyConn {
 	return r
 }
 
+//传入初始的msgs对象
 func (pc *proxyConn) Decode(msgs []*proto.Message) ([]*proto.Message, error) {
 	var err error
+	//连接上的br数据是否可读
 	if pc.completed {
+		//把br里的rd数据读到br里b缓冲区里
 		if err = pc.br.Read(); err != nil {
 			return nil, err
 		}
+		//读完标记为false
 		pc.completed = false
 	}
+	//初始化msgs结构数据
+	//流数据读进pc.br缓冲区后，解码到msgs结构对象里
 	for i := range msgs {
 		msgs[i].Type = types.CacheTypeRedis
 		// decode
@@ -83,30 +89,37 @@ func (pc *proxyConn) Decode(msgs []*proto.Message) ([]*proto.Message, error) {
 	return msgs, nil
 }
 
+// 解码pc.br缓冲区的数据到message里，传入的是msg空对象
 func (pc *proxyConn) decode(msg *proto.Message) (err error) {
 	// for migrate sync PING process
+	//持续读取pc缓冲区里的数据到msg里
 	for {
+		//标记缓冲区的读取位置
 		mark := pc.br.Mark()
+		//缓冲区解码到resp对象里
 		if err = pc.resp.decode(pc.br); err != nil {
 			if err == bufio.ErrBufferFull {
 				pc.br.AdvanceTo(mark)
 			}
 			return
 		}
-
+		//如果是数组，则跳出
 		if pc.resp.arraySize != 0 {
 			break
 		}
 	}
 
+	//流数据解码到resp
 	if pc.resp.arraySize < 1 {
 		r := nextReq(msg)
 		r.resp.copy(pc.resp)
 		return
 	}
+	//把用户的终端输入的指令字符名转成大写格式（set-->SET）
 	conv.UpdateToUpper(pc.resp.array[0].data)
 	cmd := pc.resp.array[0].data // NOTE: when array, first is command
 
+	// 匹配redis支持的各种指令
 	if bytes.Equal(cmd, cmdMSetBytes) {
 		if pc.resp.arraySize%2 == 0 {
 			err = ErrBadRequest
@@ -162,16 +175,20 @@ func (pc *proxyConn) decode(msg *proto.Message) (err error) {
 			nre2.copy(pc.resp.array[i])
 		}
 	} else {
+		//下一个请求
 		r := nextReq(msg)
+		//复制pc.resp数据到新的请求r里
 		r.resp.copy(pc.resp)
 	}
 	return
 }
 
+//到这里m还是没有值，等待赋值
 func nextReq(m *proto.Message) *Request {
 	req := m.NextReq()
 	if req == nil {
 		r := getReq()
+		//m传入一个新r请求对象
 		m.WithRequest(r)
 		return r
 	}

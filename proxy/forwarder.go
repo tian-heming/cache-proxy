@@ -56,6 +56,7 @@ var (
 )
 
 // NewForwarder new a Forwarder by cluster config.
+// 新建转发器
 func NewForwarder(cc *ClusterConfig) proto.Forwarder {
 	//默认先构建单机协议转发器
 	if _, ok := defaultForwardCacheTypes[cc.CacheType]; ok {
@@ -88,12 +89,15 @@ func newDefaultForwarder(cc *ClusterConfig) proto.Forwarder {
 	if err != nil {
 		panic(err)
 	}
-	//这个每个配置项的单机连接就是和具体后端服务器建立的拨号连接，给handler对象使用
+	//新建预置proxy.connections对象
 	conns := newConnections(cc)
+	//初始化集群backend node的元信息到该proxy.connections对象上
 	conns.init(addrs, ans, ws, alias, nil)
-	conns.startPinger()  //转发器 事前去ping下这些后端代理的机器是否存活
-	f.conns.Store(conns) //维护事先准备好的活连接，已被后续转发工作拿来就用
-	return f             //返回预热配置好的转发器出去 给Hander对象，handler方法去使用
+	//基于已有的元信息去检查下代理的bakcend node的健康状态
+	conns.startPinger() //转发器 事前去ping下这些backend node是否存活
+	// 该proxy.connections对象一切就绪可用，绑到f.conns原子变量里
+	f.conns.Store(conns)
+	return f //返回预热配置好的转发器出去 给Hander对象，handler方法里去使用
 }
 
 // Forward impl proto.Forwarder //使用内置连接conn转发消息到后端服务器或集群
@@ -102,17 +106,17 @@ func (f *defaultForwarder) Forward(msgs []*proto.Message) error {
 	if closed := atomic.LoadInt32(&f.state); closed == forwarderStateClosed {
 		return ErrForwarderClosed
 	}
-	//读取 转发器里预先维护好的和后端代理服务器的连接
+	//读取 一个转发器里的预置连接
 	conns, ok := f.conns.Load().(*connections)
 	if !ok {
 		return ErrConnectionNotExist
 	}
-	//使用这条连接去和发送和接收 后端服务器请求通信（包含回复数据）
+	//迭代消息组
 	for _, m := range msgs {
 		if m.IsBatch() { //检测是否是批处理
 			for _, subm := range m.Batch() {
-				key := subm.Request().Key()                   //获取每个请求指令的key
-				ncp, ok := conns.getPipes(f.trimHashTag(key)) //定位后端节点
+				key := subm.Request().Key()                   //获取每个请求指令的数据key
+				ncp, ok := conns.getPipes(f.trimHashTag(key)) //该数据key路由到指定backend hash node上去处理（一致性hash）
 				if !ok {
 					m.WithError(ErrForwarderHashNoNode)
 					return errors.WithStack(ErrForwarderHashNoNode)
@@ -121,6 +125,7 @@ func (f *defaultForwarder) Forward(msgs []*proto.Message) error {
 				ncp.Push(subm)
 			}
 		} else {
+			//正常消息
 			key := m.Request().Key()
 			ncp, ok := conns.getPipes(f.trimHashTag(key))
 			if !ok {
@@ -134,6 +139,7 @@ func (f *defaultForwarder) Forward(msgs []*proto.Message) error {
 	return nil
 }
 
+//Update 更新backend的集群信息
 func (f *defaultForwarder) Update(servers []string) error {
 	addrs, ws, ans, alias, err := parseServers(servers)
 	if err != nil {
@@ -143,6 +149,7 @@ func (f *defaultForwarder) Update(servers []string) error {
 	if !ok {
 		return errors.WithStack(ErrConnectionNotExist)
 	}
+
 	newConns := newConnections(f.cc)
 	copyed := newConns.init(addrs, ans, ws, alias, oldConns.nodePipe)
 	f.conns.Store(newConns)
@@ -191,6 +198,7 @@ func (f *defaultForwarder) trimHashTag(key []byte) []byte {
 	return key[bidx+1 : bidx+1+eidx]
 }
 
+//转发的连接？
 type connections struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -201,7 +209,7 @@ type connections struct {
 	ws         []int    // [1,1]
 	aliasMap   map[string]string
 	nodePipe   map[string]*proto.NodeConnPipe
-	ring       *hashkit.HashRing //hash槽
+	ring       *hashkit.HashRing //hash槽-->节点的映射（自动路由？）
 }
 
 func newConnections(cc *ClusterConfig) *connections {
@@ -209,6 +217,7 @@ func newConnections(cc *ClusterConfig) *connections {
 	c.cc = cc
 	c.aliasMap = make(map[string]string)
 	c.nodePipe = make(map[string]*proto.NodeConnPipe)
+	//新建一个指定hash函数的散列环
 	c.ring = hashkit.NewRing(cc.HashDistribution, cc.HashMethod)
 	c.ctx, c.cancel = context.WithCancel(context.Background())
 	return c
@@ -351,6 +360,7 @@ type pinger struct {
 	failure int
 }
 
+//proxy新建和backend node的连接
 func newNodeConn(cc *ClusterConfig, addr string) proto.NodeConn {
 	dto := time.Duration(cc.DialTimeout) * time.Millisecond
 	rto := time.Duration(cc.ReadTimeout) * time.Millisecond
@@ -367,6 +377,7 @@ func newNodeConn(cc *ClusterConfig, addr string) proto.NodeConn {
 	}
 }
 
+//新建backend node健康检查的指令连接
 func newPingConn(cc *ClusterConfig, addr string) proto.Pinger {
 	const timeout = 100 * time.Millisecond
 	conn := libnet.DialWithTimeout(addr, timeout, timeout, timeout)
@@ -382,6 +393,7 @@ func newPingConn(cc *ClusterConfig, addr string) proto.Pinger {
 	}
 }
 
+//解析servers配置数组
 func parseServers(svrs []string) (addrs []string, ws []int, ans []string, alias bool, err error) {
 	for _, svr := range svrs {
 		if strings.Contains(svr, " ") {

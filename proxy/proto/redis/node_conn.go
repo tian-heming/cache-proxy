@@ -43,6 +43,7 @@ type nodeConn struct {
 }
 
 // NewNodeConn create the node conn from proxy to redis
+//创建proxy到node的连接，主机名，ipc地址，各种超时控制时段
 func NewNodeConn(cluster, addr string, dialTimeout, readTimeout, writeTimeout time.Duration) (nc proto.NodeConn) {
 	conn := libnet.DialWithTimeout(addr, dialTimeout, readTimeout, writeTimeout)
 	return newNodeConn(cluster, addr, conn)

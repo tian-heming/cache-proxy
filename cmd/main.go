@@ -65,6 +65,7 @@ func main() {
 	}
 
 	if check {
+		//配置信息的验证
 		parseConfig()
 		os.Exit(0)
 	}
@@ -84,7 +85,7 @@ func main() {
 		panic(err)
 	}
 	defer p.Close()
-	//本线程去监听，新线程去处理proxy请求（且是非阻塞去建立tcp连接-epool）
+	//本线程去监听，新线程去处理proxy请求（且是非阻塞去建立tcp连接）
 	p.Serve(ccs)
 	if reload {
 		//新线程去监视
@@ -112,6 +113,7 @@ func parseConfig() (c *proxy.Config, ccs []*proxy.ClusterConfig) {
 			panic(err)
 		}
 	} else {
+		//外置配置文件没有，就使用内置字面量的值
 		c = proxy.DefaultConfig()
 	}
 	// high priority start
@@ -143,12 +145,12 @@ func signalHandler() {
 	var ch = make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	for {
-		log.Infof("overlord proxy version[%s] start serving", version.Str())
+		log.Infof("mycache  proxy version[%s] start serving", version.Str())
 		si := <-ch
-		log.Infof("overlord proxy version[%s] signal(%s) stop the process", version.Str(), si.String())
+		log.Infof("mycache  proxy version[%s] signal(%s) stop the process", version.Str(), si.String())
 		switch si {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
-			log.Infof("overlord proxy version[%s] exited", version.Str())
+			log.Infof("mycache  proxy version[%s] exited", version.Str())
 			return
 		case syscall.SIGHUP:
 		default:

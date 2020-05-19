@@ -27,7 +27,7 @@ var (
 	pongBytes = []byte("+PONG\r\n")
 )
 
-//检测器，发起请求ping-->pong 模式
+//node健康检测器，发起请求ping-->pong 模式
 type pinger struct {
 	conn *libnet.Conn
 
