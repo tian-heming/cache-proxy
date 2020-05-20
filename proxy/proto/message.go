@@ -13,6 +13,7 @@ var (
 )
 
 var msgPool = &sync.Pool{
+	//Pool没有时 new一个
 	New: func() interface{} {
 		return &Message{}
 	},
@@ -25,14 +26,16 @@ func GetMsgs(n int, caps ...int) []*Message {
 	if largs > 1 {
 		panic(fmt.Sprintf("optional argument except 1, but get %d", largs))
 	}
+	//声明个slice
 	var msgs []*Message
+	//初始化slice
 	if largs == 0 {
 		msgs = make([]*Message, n)
 	} else {
 		msgs = make([]*Message, n, caps[0])
 	}
 	for idx := range msgs {
-		// 给msgs预分配好n个Message对象（这里16个）
+		//给msgs内部每个对象空间都赋予n个msg对象
 		msgs[idx] = getMsg()
 	}
 	return msgs
@@ -69,7 +72,7 @@ type Message struct {
 
 	req    []Request       //消息里封装了多个req请求，req请求里封装了resp协议请求体和resp响应体，请求体和响应体里有具体的载荷数据
 	reqNum int             //message封装的req里真实请求的个数
-	subs   []*Message      //批量消息：这个消息是发送多个消息
+	subs   []*Message      //内嵌，套娃消息
 	wg     *sync.WaitGroup //保证所有消息都被处理，异步阻塞
 
 	// Start Time, Write Time, ReadTime, EndTime, Start Pipe Time, End Pipe Time, Start Pipe Time, End Pipe Time
@@ -85,6 +88,7 @@ func NewMessage() *Message {
 }
 
 // Reset will clean the msg
+// 对象返回池子时要清空重置对象的信息
 func (m *Message) Reset() {
 	m.Type = types.CacheTypeUnknown
 	m.reqNum = 0
@@ -94,7 +98,6 @@ func (m *Message) Reset() {
 
 // clear will clean the msg
 func (m *Message) clear() {
-	//使用_=m
 	m.Reset()
 	m.req = nil
 	m.wg = nil
@@ -161,7 +164,7 @@ func (m *Message) MarkStartPipe() {
 	m.spt = time.Now()
 }
 
-// MarkStartPipe ...
+// MarkEndPipe ...
 func (m *Message) MarkEndPipe() {
 	m.ept = time.Now()
 }
@@ -184,6 +187,7 @@ func (m *Message) MarkAddr(addr string) {
 // ResetSubs will return the Msg data to flush and reset
 func (m *Message) ResetSubs() {
 	if !m.IsBatch() {
+		//只有一个request时返回
 		return
 	}
 	for i := range m.subs[:m.reqNum] {
@@ -230,6 +234,7 @@ func (m *Message) Requests() []Request {
 }
 
 // IsBatch returns whether or not batch.
+//是否包含多个请求对象
 func (m *Message) IsBatch() bool {
 	return m.reqNum > 1
 }
@@ -240,6 +245,7 @@ func (m *Message) Batch() []*Message {
 	if slen == 0 {
 		return nil
 	}
+	//比较 取最小
 	var min = minInt(len(m.subs), slen)
 	for i := 0; i < min; i++ {
 		m.subs[i].Type = m.Type
@@ -247,6 +253,7 @@ func (m *Message) Batch() []*Message {
 	}
 	delta := slen - len(m.subs)
 	for i := 0; i < delta; i++ {
+		//新建两个msg 放到套娃坑位里
 		msg := getMsg()
 		msg.Type = m.Type
 		msg.st = m.st
@@ -254,6 +261,7 @@ func (m *Message) Batch() []*Message {
 		msg.WithWaitGroup(m.wg)
 		m.subs = append(m.subs, msg)
 	}
+	//返回套娃里的msg，外部的不返回，切片方式过滤
 	return m.subs[:slen]
 }
 

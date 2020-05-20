@@ -56,6 +56,7 @@ func NewNodeConnPipe(conns int32, newNc func() NodeConn) (ncp *NodeConnPipe) {
 //推送具体消息到pipe的 输入通道input chan
 func (ncp *NodeConnPipe) Push(m *Message) {
 	m.Add() //阻塞标志
+	// 消息类型的双向通道
 	var input chan *Message
 	ncp.l.RLock() //加锁 处理mesg
 	if ncp.state == opened {
@@ -103,7 +104,7 @@ func (ncp *NodeConnPipe) Close() {
 // msgPipe message pipeline.
 // 消息管道
 type msgPipe struct {
-	nc    atomic.Value    //node conn
+	nc    atomic.Value    //backend node conn
 	newNc func() NodeConn //持有创建连接的回调
 	input <-chan *Message //只读chan
 

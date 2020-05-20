@@ -66,9 +66,11 @@ func TestPipe(t *testing.T) {
 		m := getMsg()
 		m.WithRequest(&mockRequest{})
 		m.WithWaitGroup(wg)
+		//消息push到各自node连接的input chan
 		ncp1.Push(m)
 		ncp2.Push(m)
 	}
+	//阻塞等待 上面的m处理完
 	wg.Wait()
 	ncp1.Close()
 	ncp2.Close()
