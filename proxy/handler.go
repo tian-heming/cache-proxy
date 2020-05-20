@@ -127,7 +127,7 @@ func (h *Handler) handle() {
 			//检查msgs里是否有特殊cmd-PING
 			isSpecialCmd, err = h.pc.CmdCheck(msgs[0])
 			if err != nil {
-				//预检不通过，清空写缓存区
+				//预检不通过，清空写缓冲区
 				h.pc.Flush()
 				//走默认处理流程
 				h.deferHandle(messages, err)
@@ -150,7 +150,7 @@ func (h *Handler) handle() {
 				//msg发送结束标记
 				msg.MarkEndPipe()
 				if err = h.pc.Encode(msg); err != nil {
-					h.pc.Flush() //清空写缓存(发送出去)
+					h.pc.Flush() //清空写缓冲(发送出去)
 					h.deferHandle(messages, err)
 					return
 				}

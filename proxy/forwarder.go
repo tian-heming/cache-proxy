@@ -101,7 +101,7 @@ func newDefaultForwarder(cc *ClusterConfig) proto.Forwarder {
 }
 
 // Forward impl proto.Forwarder //使用内置连接conn转发消息到后端服务器或集群
-//使用hash tag 定位转发到后端集群服务器或单机缓存服务器，msgs的mesg是指针，改变了回影响调用出的数据
+//使用hash tag 定位转发到后端集群服务器或单机缓冲服务器，msgs的mesg是指针，改变了回影响调用出的数据
 func (f *defaultForwarder) Forward(msgs []*proto.Message) error {
 	if closed := atomic.LoadInt32(&f.state); closed == forwarderStateClosed {
 		return ErrForwarderClosed

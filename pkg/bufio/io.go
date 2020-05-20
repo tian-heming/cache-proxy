@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	//ErrBufferFull 缓存区满 错误
+	//ErrBufferFull 缓冲区满 错误
 	ErrBufferFull = bufio.ErrBufferFull
 )
 
@@ -25,7 +25,7 @@ type Reader struct {
 	err error
 }
 
-//NewReader 将io.Reader对象封装成一个带Buffer缓存的buifio.Reader对象
+//NewReader 将io.Reader对象封装成一个带Buffer缓冲的buifio.Reader对象
 func NewReader(rd io.Reader, b *Buffer) *Reader {
 	return &Reader{rd: rd, b: b}
 }
@@ -71,14 +71,14 @@ func (r *Reader) Read() error {
 	if r.err != nil {
 		return r.err
 	}
-	//如果b缓冲区中未读的数据量等于了本身缓存总容量
-	//缓存已满，
+	//如果b缓冲区中未读的数据量等于了本身缓冲总容量
+	//缓冲已满，
 	if r.b.buffered() == r.b.len() {
 		//对b缓冲区buf切片进去二倍的扩容
 		r.b.grow()
 	}
-	//如果b缓冲区中已写的数据量等于了本身缓存总容量
-	//写缓存满，就把已读的丢弃，缩小缓存占用
+	//如果b缓冲区中已写的数据量等于了本身缓冲总容量
+	//写缓冲满，就把已读的丢弃，缩小缓冲占用
 	if r.b.w == r.b.len() {
 		//对b缓冲区buf切片进行收缩
 		r.b.shrink()
@@ -162,7 +162,7 @@ type Writer struct {
 }
 
 // NewWriter returns a new Writer whose buffer has the default size.
-//将wr对象封装成一个带缓存的bufio.Writer对象
+//将wr对象封装成一个带缓冲的bufio.Writer对象
 func NewWriter(wr *libnet.Conn) *Writer {
 	return &Writer{wr: wr, bufs: make([][]byte, 0, maxWritevSize)}
 }

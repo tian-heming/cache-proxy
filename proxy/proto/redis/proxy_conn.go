@@ -34,11 +34,11 @@ func (pc *ProxyConn) Bw() *bufio.Writer {
 
 //
 type proxyConn struct {
-	br        *bufio.Reader //终端连接上的读缓存区（client-->proxy读方向请求数据的缓存区）
-	bw        *bufio.Writer //终端连接上的写缓存区 （client<--proxy写方向回复数据的缓存区）
-	completed bool          //br缓存是否可读
+	br        *bufio.Reader //终端连接上的读缓冲区（client-->proxy读方向请求数据的缓冲区）
+	bw        *bufio.Writer //终端连接上的写缓冲区 （client<--proxy写方向回复数据的缓冲区）
+	completed bool          //br缓冲是否可读
 
-	resp *resp //br里缓存区数据反序列化结构对象（流-->struct）
+	resp *resp //br里缓冲区数据反序列化结构对象（流-->struct）
 
 	authorized bool   //proxy对客户端连接的认证
 	password   string //密码
@@ -66,7 +66,7 @@ func (pc *proxyConn) Decode(msgs []*proto.Message) ([]*proto.Message, error) {
 	var err error
 	//连接上的br数据是否可读
 	if pc.completed {
-		//把br里的rd数据读到br里b缓存区里
+		//把br里的rd数据读到br里b缓冲区里
 		if err = pc.br.Read(); err != nil {
 			return nil, err
 		}
@@ -74,7 +74,7 @@ func (pc *proxyConn) Decode(msgs []*proto.Message) ([]*proto.Message, error) {
 		pc.completed = false
 	}
 	//初始化msgs结构数据
-	//流数据读进pc.br缓存区后，解码到msgs结构对象里
+	//流数据读进pc.br缓冲区后，解码到msgs结构对象里
 	for i := range msgs {
 		msgs[i].Type = types.CacheTypeRedis
 		// decode
@@ -89,14 +89,14 @@ func (pc *proxyConn) Decode(msgs []*proto.Message) ([]*proto.Message, error) {
 	return msgs, nil
 }
 
-// 解码pc.br缓存区的数据到message里，传入的是msg空对象
+// 解码pc.br缓冲区的数据到message里，传入的是msg空对象
 func (pc *proxyConn) decode(msg *proto.Message) (err error) {
 	// for migrate sync PING process
-	//持续读取pc缓存区里的数据到msg里
+	//持续读取pc缓冲区里的数据到msg里
 	for {
-		//标记缓存区的读取位置
+		//标记缓冲区的读取位置
 		mark := pc.br.Mark()
-		//缓存区解码到resp对象里
+		//缓冲区解码到resp对象里
 		if err = pc.resp.decode(pc.br); err != nil {
 			if err == bufio.ErrBufferFull {
 				pc.br.AdvanceTo(mark)
