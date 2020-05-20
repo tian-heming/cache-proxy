@@ -114,7 +114,7 @@ servers = [
 `
 
 func TestClusterConfigLoadFromFile(t *testing.T) {
-	path := "/tmp/overlord-proxy-test-example.toml"
+	path := "/tmp/proxy-backend-conf_test.toml"
 	fd, err := os.Create(path)
 	if !assert.NoError(t, err) {
 		return

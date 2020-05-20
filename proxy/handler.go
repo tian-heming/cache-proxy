@@ -97,15 +97,20 @@ func (h *Handler) Handle() {
 
 //新G去处理这个任务
 func (h *Handler) handle() {
+	/*
+		var这里如此的意图:go handler接来下的私有全局变量，接下来的处理围绕这些变量引用读写，注意并发安全
+	*/
 	var (
 		messages []*proto.Message    //存放要接收的多个消息
 		msgs     []*proto.Message    //存放待发送的多个消息
-		wg       = &sync.WaitGroup{} //消息并发时G控制组
+		wg       = &sync.WaitGroup{} //消息并发时G异步阻塞控制组
 		err      error
 	)
 	//分配最大message并发对象，一开始是默认2个并发对象【只分配内存，没有真实数据】
 	messages = h.allocMaxConcurrent(wg, messages, len(msgs))
-	//持续读写流
+	/*
+		持续读写流，解码流数据，注意并发大时解码对象的内存占用
+	*/
 	for {
 		// 1. read until limit or error
 		// 读取流数据解码到分配好的message对象空间
@@ -122,7 +127,7 @@ func (h *Handler) handle() {
 			//检查msgs里是否有特殊cmd-PING
 			isSpecialCmd, err = h.pc.CmdCheck(msgs[0])
 			if err != nil {
-				//预检不通过，清空写缓冲区
+				//预检不通过，清空写缓存区
 				h.pc.Flush()
 				//走默认处理流程
 				h.deferHandle(messages, err)
@@ -133,7 +138,8 @@ func (h *Handler) handle() {
 		//转发带认证的常规命令到forwarder的node连接??? 仅仅是proxy看下？？
 		if !isSpecialCmd && h.pc.IsAuthorized() {
 			// 3. send to cluster
-			//使用转发器里内置的conn发送所有消息到backend node服务器
+			//使用转发器里内置的node_conn发送所有消息到backend node服务器
+			//注意:这里有新G参与，处理时要处理完全
 			h.forwarder.Forward(msgs)
 
 			//阻塞直到每个msgs都执行done()了，在继续往下执行
@@ -144,7 +150,7 @@ func (h *Handler) handle() {
 				//msg发送结束标记
 				msg.MarkEndPipe()
 				if err = h.pc.Encode(msg); err != nil {
-					h.pc.Flush() //编码协议并发送
+					h.pc.Flush() //清空写缓存(发送出去)
 					h.deferHandle(messages, err)
 					return
 				}
@@ -155,7 +161,7 @@ func (h *Handler) handle() {
 			}
 		}
 
-		//数据写代理连接
+		//清空连接上的数据
 		if err = h.pc.Flush(); err != nil {
 			h.deferHandle(messages, err)
 			return
@@ -188,7 +194,7 @@ func (h *Handler) allocMaxConcurrent(wg *sync.WaitGroup, msgs []*proto.Message, 
 	} else if msgsLength < maxConcurrent && msgsLength == lastCount {
 		alloc = msgsLength * concurrent //在允许范围内，一次可以执行两个连接的并发
 	}
-	//如果alloc不等于0，则需要分配内存给消息流msgs存储使用
+	//如果alloc有值则需要分配内存给消息流msgs存储使用
 	if alloc > 0 {
 		//添加消息到池子
 		proto.PutMsgs(msgs)

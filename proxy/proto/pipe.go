@@ -38,7 +38,7 @@ func NewNodeConnPipe(conns int32, newNc func() NodeConn) (ncp *NodeConnPipe) {
 		panic("the number of connections cannot be zero")
 	}
 	ncp = &NodeConnPipe{
-		conns:  conns,                        //连接的数量
+		conns:  conns,                        //该pipe的连接数量
 		inputs: make([]chan *Message, conns), //初始化conns数量长度的chan数组,用来保存多个chan，chan用来传递*Message消息
 		mps:    make([]*msgPipe, conns),      //初始化conns数量长度的*msgPipe数组，用来保存多个msgPipe数据
 		errCh:  make(chan error, 1),          //初始化一个chan，用来传递错误信息
@@ -46,14 +46,14 @@ func NewNodeConnPipe(conns int32, newNc func() NodeConn) (ncp *NodeConnPipe) {
 	for i := int32(0); i < ncp.conns; i++ {
 		//每个chan初始化chan容量
 		ncp.inputs[i] = make(chan *Message, pipeMaxCount*pipeMaxCount)
-		//新建msg piple，传入node的连接newNc
+		//新建msg piple赋值给ncp，传入node的连接newNc
 		ncp.mps[i] = newMsgPipe(ncp.inputs[i], newNc, ncp.errCh)
 	}
 	return
 }
 
 // Push push message into input chan.
-//退送具体消息到pipe的 输入通道input chan
+//推送具体消息到pipe的 输入通道input chan
 func (ncp *NodeConnPipe) Push(m *Message) {
 	m.Add() //阻塞标志
 	var input chan *Message
@@ -103,21 +103,21 @@ func (ncp *NodeConnPipe) Close() {
 // msgPipe message pipeline.
 // 消息管道
 type msgPipe struct {
-	nc    atomic.Value
-	newNc func() NodeConn //node conn
-	input <-chan *Message //消息接收管道
+	nc    atomic.Value    //node conn
+	newNc func() NodeConn //持有创建连接的回调
+	input <-chan *Message //只读chan
 
-	batch [pipeMaxCount]*Message //
+	batch [pipeMaxCount]*Message //数组，批量消息
 	count int
 
-	errCh chan<- error
+	errCh chan<- error //只写chan
 }
 
 // newMsgPipe new msgPipe and return.
 //创建一个消息管道，然后返回改管道
 func newMsgPipe(input <-chan *Message, newNc func() NodeConn, errCh chan<- error) (mp *msgPipe) {
 	mp = &msgPipe{
-		newNc: newNc, //持有node连接
+		newNc: newNc,
 		input: input,
 		errCh: errCh,
 	}
@@ -126,6 +126,9 @@ func newMsgPipe(input <-chan *Message, newNc func() NodeConn, errCh chan<- error
 	return
 }
 func (mp *msgPipe) pipe() {
+	/*
+
+	 */
 	var (
 		nc  = mp.nc.Load().(NodeConn)
 		m   *Message
@@ -150,8 +153,11 @@ func (mp *msgPipe) pipe() {
 			}
 			mp.batch[mp.count] = m
 			mp.count++
+			//消息写入时间标记
 			m.MarkWrite()
+			//连接的地址
 			nc.Addr()
+			//正式写入
 			err = nc.Write(m)
 			m = nil
 			if err != nil {

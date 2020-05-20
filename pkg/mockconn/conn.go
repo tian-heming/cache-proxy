@@ -25,8 +25,8 @@ func (m mockAddr) String() string {
 //MockConn  mock tcp链接
 type MockConn struct {
 	addr   mockAddr      //请求发起者的地址
-	rbuf   *bytes.Buffer //读缓冲区
-	Wbuf   *bytes.Buffer //写缓冲区
+	rbuf   *bytes.Buffer //读缓存区
+	Wbuf   *bytes.Buffer //写缓存区
 	data   []byte        //连接的载荷数据
 	repeat int           //重传次数
 	Err    error
@@ -47,7 +47,7 @@ func (m *MockConn) Read(b []byte) (n int, err error) {
 	}
 	//重传次数
 	if m.repeat > 0 {
-		//把连接m的数据写入连接的rbuf读缓冲区里
+		//把连接m的数据写入连接的rbuf读缓存区里
 		m.rbuf.Write(m.data)
 		m.repeat--
 	}
@@ -101,8 +101,8 @@ func (m *MockConn) SetWriteDeadline(t time.Time) error { return nil }
 func CreateMockConn(data []byte, r int) net.Conn {
 	mconn := &MockConn{
 		addr:   "127.0.0.1:12345",
-		rbuf:   bytes.NewBuffer(nil), //连接上的读缓冲区
-		Wbuf:   new(bytes.Buffer),    //连接上的写缓冲区
+		rbuf:   bytes.NewBuffer(nil), //连接上的读缓存区
+		Wbuf:   new(bytes.Buffer),    //连接上的写缓存区
 		data:   data,                 //模拟连接上的数据流
 		repeat: r,                    //连接重试次数
 	}

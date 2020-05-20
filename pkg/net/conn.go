@@ -84,7 +84,7 @@ func (c *Conn) Close() error {
 	return nil
 }
 
-//Writev 带缓存批量写，减少系统调用write频繁写链接
+// Writev 将缓存里的批量数据一次性写入到连接，减少系统调用write频繁复制,写链接
 func (c *Conn) Writev(buf *net.Buffers) (int64, error) {
 	if c.closed || c.Conn == nil {
 		return 0, ErrConnClosed

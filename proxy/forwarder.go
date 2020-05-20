@@ -76,7 +76,7 @@ func NewForwarder(cc *ClusterConfig) proto.Forwarder {
 type defaultForwarder struct {
 	cc      *ClusterConfig
 	hashTag []byte       // 46->ascii：“.”
-	conns   atomic.Value //proxy-conn连接对象
+	conns   atomic.Value //具体node_conn对象
 	state   int32        //0
 }
 

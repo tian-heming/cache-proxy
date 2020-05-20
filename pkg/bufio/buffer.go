@@ -20,6 +20,7 @@ var (
 func init() {
 	//初始化sizes
 	sizes = make([]int, 0)
+	//起始size
 	threshold := defaultBufferSize
 	for threshold <= maxBufferSize {
 		//切片尾部增加，保证顺序

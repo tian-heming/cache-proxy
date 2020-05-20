@@ -243,7 +243,7 @@ func TestRespEncode(t *testing.T) {
 			bw := bufio.NewWriter(conn)
 
 			err := tt.Resp.encode(bw)
-			bw.Flush() //flush 函数 对于网络io是将数据从本地缓冲区发送给tcpSocket缓冲区去，对应文件磁盘io是从缓冲区落盘
+			bw.Flush() //flush 函数 对于网络io是将数据从本地缓存区发送给tcpSocket缓存区去，对应文件磁盘io是从缓存区落盘
 			assert.Nil(t, err)
 
 			buf := make([]byte, 1024)

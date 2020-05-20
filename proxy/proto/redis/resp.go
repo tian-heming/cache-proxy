@@ -110,7 +110,7 @@ func (r *resp) next() *resp {
 func (r *resp) decode(br *bufio.Reader) (err error) {
 	r.reset()
 	// start read
-	line, err := br.ReadLine() //逐行读缓冲器到line里（\r\n分割）
+	line, err := br.ReadLine() //逐行读缓存器到line里（\r\n分割）
 	if err != nil {
 		return err
 	}

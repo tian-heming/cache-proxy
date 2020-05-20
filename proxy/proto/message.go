@@ -67,10 +67,10 @@ func putMsg(m *Message) {
 type Message struct {
 	Type types.CacheType // 流里的消息类型 "redis"
 
-	req    []Request  //消息里封装了多个req请求，req请求里封装了resp协议请求体和resp响应体，请求体和响应体里有具体的载荷数据
-	reqNum int        //message封装的req里真实请求的个数
-	subs   []*Message //批量消息：这个消息是发送多个消息
-	wg     *sync.WaitGroup
+	req    []Request       //消息里封装了多个req请求，req请求里封装了resp协议请求体和resp响应体，请求体和响应体里有具体的载荷数据
+	reqNum int             //message封装的req里真实请求的个数
+	subs   []*Message      //批量消息：这个消息是发送多个消息
+	wg     *sync.WaitGroup //保证所有消息都被处理，异步阻塞
 
 	// Start Time, Write Time, ReadTime, EndTime, Start Pipe Time, End Pipe Time, Start Pipe Time, End Pipe Time
 	st, wt, rt, et, spt, ept, sit, eit time.Time
@@ -270,6 +270,7 @@ func (m *Message) Add() {
 }
 
 // Done mark handle message done.
+//标记该message处理作业完成
 func (m *Message) Done() {
 	if m.wg != nil {
 		m.wg.Done()

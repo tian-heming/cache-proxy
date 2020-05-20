@@ -18,12 +18,14 @@ var (
 	crlfBytes = []byte("\r\n")
 )
 
+//Reader def
 type Reader struct {
 	rd  io.Reader //存放可读对象
 	b   *Buffer   //内置缓冲区
 	err error
 }
 
+//NewReader 将io.Reader对象封装成一个带Buffer缓存的buifio.Reader对象
 func NewReader(rd io.Reader, b *Buffer) *Reader {
 	return &Reader{rd: rd, b: b}
 }
@@ -153,13 +155,14 @@ const (
 type Writer struct {
 	wr    *libnet.Conn
 	bufsp net.Buffers
-	bufs  [][]byte
+	bufs  [][]byte //写缓冲区 Flush刷到bufsp里
 	cnt   int
 
 	err error
 }
 
 // NewWriter returns a new Writer whose buffer has the default size.
+//将wr对象封装成一个带缓存的bufio.Writer对象
 func NewWriter(wr *libnet.Conn) *Writer {
 	return &Writer{wr: wr, bufs: make([][]byte, 0, maxWritevSize)}
 }
