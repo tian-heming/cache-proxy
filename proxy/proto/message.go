@@ -38,7 +38,7 @@ func GetMsgs(n int, caps ...int) []*Message {
 	return msgs
 }
 
-// PutMsgs Release message. //清空所有消息对象的复用，归还到消息池里
+// PutMsgs Release message. //清空所有消息对象的内存上的数据，归还到消息池里
 func PutMsgs(msgs []*Message) {
 	for _, m := range msgs {
 		for _, sm := range m.subs {
