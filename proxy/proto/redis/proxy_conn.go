@@ -115,11 +115,11 @@ func (pc *proxyConn) decode(msg *proto.Message) (err error) {
 		r.resp.copy(pc.resp)
 		return
 	}
-	//把用户的终端输入的指令字符名转成大写格式（set-->SET）
+	//把用户的终端输入的命令字符名转成大写格式（set-->SET）
 	conv.UpdateToUpper(pc.resp.array[0].data)
 	cmd := pc.resp.array[0].data // NOTE: when array, first is command
 
-	// 匹配redis支持的各种指令
+	// 匹配redis支持的各种命令
 	if bytes.Equal(cmd, cmdMSetBytes) {
 		if pc.resp.arraySize%2 == 0 {
 			err = ErrBadRequest

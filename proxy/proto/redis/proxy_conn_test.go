@@ -54,7 +54,7 @@ func TestDecodeInlineGet(t *testing.T) {
 }
 
 func TestDecodeBasicOk(t *testing.T) {
-	//终端发出的指令（resp规定终端使用*数组结构发请求）
+	//终端发出的命令（resp规定终端使用*数组结构发请求）
 	data := "*2\r\n$3\r\nGET\r\n$4\r\nbaka\r\n"
 	nmsgs := _decodeMessage(t, data)
 	assert.Len(t, nmsgs, 1)
@@ -175,7 +175,7 @@ func TestEncodeNotSupportCtl(t *testing.T) {
 	//msg里封装了rep请求对象，该对象里封装了各自各样具体的resp请求/回复数据项，最后这些消息携带数据在tcp连接通道里往返通信
 	msg := proto.NewMessage() //从消息池里msgPool获取消息对象msg，这种承载各自实例数据的中介对象，复用是重置字段值就可以了，不用频繁重写创建
 	//捞重置的req对象给msg封装用
-	req := getReq()   //从请求体池reqPool里获取请求体对象req，承载各自resp操作指令（resp请求指令，reply响应指令）的resp请求数据，复用是重置字段值就可以了，不用频繁重写创建
+	req := getReq()   //从请求体池reqPool里获取请求体对象req，承载各自resp操作命令（resp请求命令，reply响应命令）的resp请求数据，复用是重置字段值就可以了，不用频繁重写创建
 	req.resp = &resp{ //resp请求项
 		respType: respArray,
 		data:     []byte("2"),

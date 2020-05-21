@@ -135,7 +135,7 @@ func (r *Request) Key() []byte {
 	k := r.resp.array[1]
 	// SUPPORT EVAL command
 	const evalArgsMinCount int = 4
-	//判断是否是 执行脚本指令
+	//判断是否是 执行脚本命令
 	if r.resp.arraySize >= evalArgsMinCount {
 		if bytes.Equal(r.resp.array[0].data, cmdEvalBytes) {
 			// find the 4th key with index 3
@@ -175,7 +175,7 @@ func (r *Request) Reply() *RESP {
 //
 // NOTE: use string([]byte) as a map key, it is very specific!!!
 // https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html#using_byte_as_a_map_key
-// 检查请求的指令是否受支持的指令
+// 检查请求的命令是否受支持的命令
 func (r *Request) IsSupport() bool {
 	if r.resp.arraySize < 1 {
 		return false
@@ -188,7 +188,7 @@ func (r *Request) IsSupport() bool {
 //
 // NOTE: use string([]byte) as a map key, it is very specific!!!
 // https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html#using_byte_as_a_map_key
-//检查请求的指令是否是控制类指令
+//检查请求的命令是否是控制类命令
 func (r *Request) IsCtl() bool {
 	if r.resp.arraySize < 1 {
 		return false
@@ -201,7 +201,7 @@ func (r *Request) IsCtl() bool {
 //
 // NOTE: use string([]byte) as a map key, it is very specific!!!
 // https://dave.cheney.net/high-performance-go-workshop/dotgo-paris.html#using_byte_as_a_map_key
-// 检查请求的指令是否是特殊指令
+// 检查请求的命令是否是特殊命令
 func (r *Request) IsSpecial() bool {
 	if r.resp.arraySize < 1 {
 		return false

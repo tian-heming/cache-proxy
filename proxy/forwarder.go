@@ -115,7 +115,7 @@ func (f *defaultForwarder) Forward(msgs []*proto.Message) error {
 	for _, m := range msgs {
 		if m.IsBatch() { //检测是否是批处理
 			for _, subm := range m.Batch() {
-				key := subm.Request().Key()                   //获取每个请求指令的数据key
+				key := subm.Request().Key()                   //获取每个请求命令的数据key
 				ncp, ok := conns.getPipes(f.trimHashTag(key)) //该数据key路由到指定backend hash node上去处理（一致性hash）
 				if !ok {
 					m.WithError(ErrForwarderHashNoNode)
@@ -377,7 +377,7 @@ func newNodeConn(cc *ClusterConfig, addr string) proto.NodeConn {
 	}
 }
 
-//新建backend node健康检查的指令连接
+//新建backend node健康检查的命令连接
 func newPingConn(cc *ClusterConfig, addr string) proto.Pinger {
 	const timeout = 100 * time.Millisecond
 	conn := libnet.DialWithTimeout(addr, timeout, timeout, timeout)

@@ -64,7 +64,7 @@ func (m *MockConn) Write(b []byte) (n int, err error) {
 		err = m.Err
 		return
 	}
-	//b指令数据写入到 连接的Wbuf
+	//b命令数据写入到 连接的Wbuf
 	return m.Wbuf.Write(b)
 }
 

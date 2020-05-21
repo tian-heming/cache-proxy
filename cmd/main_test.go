@@ -22,6 +22,8 @@ func TestRedisClient(t *testing.T) {
 		Password: "",       // redis认证
 		DB:       0,        // 选择数据库
 	})
+	// statecmd := rdb.Pipeline().Auth("123456")
+	// statecmd.Result()
 	pong, err := rdb.Ping().Result() // Output: PONG <nil>
 	t.Log("======哈======")
 	assert.Equal(t, "PONG", pong)

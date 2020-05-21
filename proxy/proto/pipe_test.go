@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//pipe.go # 聚合message批量发送给缓存node节点的抽象工具类，核心思想是减少系统write调用，将多个指令聚合为一次writev
+//pipe.go # 聚合message批量发送给缓存node节点的抽象工具类，核心思想是减少系统write调用，将多个命令聚合为一次writev
 type mockNodeConn struct {
 	closed     bool
 	count, num int
