@@ -198,7 +198,7 @@ func (f *defaultForwarder) trimHashTag(key []byte) []byte {
 	return key[bidx+1 : bidx+1+eidx]
 }
 
-//转发的连接？
+//
 type connections struct {
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -209,7 +209,7 @@ type connections struct {
 	ws         []int    // [1,1]
 	aliasMap   map[string]string
 	nodePipe   map[string]*proto.NodeConnPipe
-	ring       *hashkit.HashRing //hash槽-->节点的映射（自动路由？）
+	ring       *hashkit.HashRing //hash槽-->节点的映射
 }
 
 func newConnections(cc *ClusterConfig) *connections {

@@ -177,15 +177,18 @@ func (h *HashRing) DelNode(n string) {
 
 // GetNode returns result node by given key.
 func (h *HashRing) GetNode(key []byte) (string, bool) {
+	//获取hash环
 	ts, ok := h.ticks.Load().(*tickArray)
 	if !ok || ts.length == 0 {
 		return "", false
 	}
 	value := h.hash(key)
 
+	//环上顺时针寻址
 	i := sort.Search(ts.length, func(i int) bool { return ts.nodes[i].hash >= value })
 	if i == ts.length {
 		i = 0
 	}
+	//返回真实服务器名称
 	return ts.nodes[i].node, true
 }
