@@ -76,7 +76,7 @@ func NewForwarder(cc *ClusterConfig) proto.Forwarder {
 type defaultForwarder struct {
 	cc      *ClusterConfig
 	hashTag []byte       // 46->ascii：“.”
-	conns   atomic.Value //具体node_conn对象
+	conns   atomic.Value //node连接,node元信息管理connections
 	state   int32        //0
 }
 
@@ -270,6 +270,7 @@ func (c *connections) getPipes(key []byte) (ncp *proto.NodeConnPipe, ok bool) {
 }
 
 func (c *connections) startPinger() {
+	//自动剔除
 	if !c.cc.PingAutoEject {
 		return
 	}

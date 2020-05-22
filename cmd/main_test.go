@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/stretchr/testify/assert"
 )
 
 func numberGen() string {
@@ -18,36 +17,36 @@ func numberGen() string {
 
 func TestRedisClient(t *testing.T) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     ":26379", // 使用代理地址
-		Password: "",       // redis认证
-		DB:       0,        // 选择数据库
+		Addr:     "0.0.0.0:26379", // 使用代理地址
+		Password: "",              // redis认证
+		DB:       2,               // 选择数据库
 	})
-	// rdb.Do("AUTH", "123456", "SET", "KI", "SSSSSS")
-	// rdb.Do("ping","ooo")
-	// Pipeer := rdb.Pipeline()
-	// Pipeer.Do("auth", "123456")
-	// // Pipeer.Auth("123456")
-	// Pipeer.Ping()
-	// // Pipeer.Select(15)
-	// Pipeer.Set("heee", "shang ee", 5*time.Minute)
-	// cmds, err := Pipeer.Exec()
-	// t.Log(cmds, err)
+	Pipeer := rdb.Pipeline()
+	// Pipeer.Auth("123456")
+	Pipeer.Select(2)
+	Pipeer.Set("tqr29", "shang ee", 5*time.Minute)
+	Pipeer.HSet("myhash", "hkey1", "hash-value")
+	cmds, err := Pipeer.Exec()
+	if err != nil {
+		t.Log(cmds, err)
+	}
+
 	// for _, cmd := range cmds {
 	// 	t.Log(cmd.(*redis.StatusCmd).Args())
 	// }
 	// err = Pipeer.Close()
 	// t.Log(err)
 	// statecmd.Result()
-	pong, err := rdb.Ping().Result() // Output: PONG <nil>
-	t.Log("======哈======")
-	assert.Equal(t, "PONG", pong)
-	t.Log(pong, err)
+	// pong, err := rdb.Ping().Result() // Output: PONG <nil>
+	// t.Log("======哈======")
+	// assert.Equal(t, "PONG", pong)
+	// t.Log(pong, err)
 
-	res, err := rdb.Set("tian.heming", "10000", 1*time.Minute).Result()
-	if err != nil {
-		t.Log(err)
-	}
-	t.Log(res)
+	// res, err := rdb.Set("tian.heming", "10000", 1*time.Minute).Result()
+	// if err != nil {
+	// 	t.Log(err)
+	// }
+	// t.Log(res)
 	//写1000条在默认数据库,ttl:10分钟
 	// for i := 0; i < 10; i++ {
 	// 	thisKey := numberGen()

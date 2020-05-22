@@ -282,6 +282,8 @@ var (
 		"4\r\nLLEN",
 		"6\r\nLRANGE",
 		"7\r\nPFCOUNT",
+		"4\r\nAUTH",   //支持auth
+		"6\r\nSELECT", //支持选库
 	}
 	writeCmds = []string{
 		"3\r\nDEL",
@@ -360,7 +362,6 @@ var (
 		"7\r\nEVALSHA",
 		"4\r\nECHO",
 		"4\r\nINFO",
-		"4\r\nAUTH",
 		"5\r\nPROXY",
 		"7\r\nSLOWLOG",
 		"6\r\nSELECT",
@@ -370,10 +371,10 @@ var (
 	}
 	controlCmds = []string{}
 	specialCmds = []string{
-		// "4\r\nAUTH",
 		"4\r\nPING",
 		"4\r\nQUIT",
 		"7\r\nCOMMAND",
-		"8\r\nPIPELINE",
+		//"8\r\nPIPELINE", //支持piple
+		// "4\r\nAUTH", 不拦截auth
 	}
 )
