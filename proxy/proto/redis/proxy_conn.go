@@ -226,7 +226,9 @@ func (pc *proxyConn) Encode(m *proto.Message) (err error) {
 }
 
 func (pc *proxyConn) mergeOK(m *proto.Message) (err error) {
+	//接收resp响应
 	_ = pc.bw.Write(respStringBytes)
+	//合并多个resq命令，在bw缓冲区尾部以okBytes
 	err = pc.bw.Write(okBytes)
 	return
 }
