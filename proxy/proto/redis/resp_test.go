@@ -20,34 +20,34 @@ func TestRespDecode(t *testing.T) {
 		ExpectData []byte   //预期数据
 		ExpectArr  [][]byte //预期数组
 	}{
-		// {
-		// 	Name:       "ok",
-		// 	Bytes:      []byte("+OK\r\n"), //单行字符串
-		// 	ExpectTp:   respString,
-		// 	ExpectLen:  0,
-		// 	ExpectData: []byte("OK"),
-		// },
-		// {
-		// 	Name:       "error",
-		// 	Bytes:      []byte("-Error message\r\n"), //错误类型
-		// 	ExpectTp:   respError,
-		// 	ExpectLen:  0,
-		// 	ExpectData: []byte("Error message"),
-		// },
-		// {
-		// 	Name:       "int",
-		// 	Bytes:      []byte(":1000\r\n"), //数值类型
-		// 	ExpectTp:   respInt,
-		// 	ExpectLen:  0,
-		// 	ExpectData: []byte("1000"),
-		// },
-		// {
-		// 	Name:       "bulk",
-		// 	Bytes:      []byte("$6\r\nfoobar\r\n"), //多行字符串
-		// 	ExpectTp:   respBulk,
-		// 	ExpectLen:  0,
-		// 	ExpectData: []byte("6\r\nfoobar"),
-		// },
+		{
+			Name:       "ok",
+			Bytes:      []byte("+OK\r\n"), //单行字符串
+			ExpectTp:   respString,
+			ExpectLen:  0,
+			ExpectData: []byte("OK"),
+		},
+		{
+			Name:       "error",
+			Bytes:      []byte("-Error message\r\n"), //错误类型
+			ExpectTp:   respError,
+			ExpectLen:  0,
+			ExpectData: []byte("Error message"),
+		},
+		{
+			Name:       "int",
+			Bytes:      []byte(":1000\r\n"), //数值类型
+			ExpectTp:   respInt,
+			ExpectLen:  0,
+			ExpectData: []byte("1000"),
+		},
+		{
+			Name:       "bulk",
+			Bytes:      []byte("$6\r\nfoobar\r\n"), //多行字符串
+			ExpectTp:   respBulk,
+			ExpectLen:  0,
+			ExpectData: []byte("6\r\nfoobar"),
+		},
 		{
 			Name:       "array1",
 			Bytes:      []byte("*2\r\n$3\r\nfoo\r\n$4\r\nbara\r\n"), //字符串数组类型
