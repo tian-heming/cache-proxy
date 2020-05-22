@@ -198,7 +198,7 @@ func (f *defaultForwarder) trimHashTag(key []byte) []byte {
 	return key[bidx+1 : bidx+1+eidx]
 }
 
-//
+//connections node conn的管理，node server元信息管理
 type connections struct {
 	ctx    context.Context
 	cancel context.CancelFunc

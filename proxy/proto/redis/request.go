@@ -360,6 +360,7 @@ var (
 		"7\r\nEVALSHA",
 		"4\r\nECHO",
 		"4\r\nINFO",
+		"4\r\nAUTH",
 		"5\r\nPROXY",
 		"7\r\nSLOWLOG",
 		"6\r\nSELECT",
@@ -369,9 +370,10 @@ var (
 	}
 	controlCmds = []string{}
 	specialCmds = []string{
-		"4\r\nAUTH",
+		// "4\r\nAUTH",
 		"4\r\nPING",
 		"4\r\nQUIT",
 		"7\r\nCOMMAND",
+		"8\r\nPIPELINE",
 	}
 )

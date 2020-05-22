@@ -64,7 +64,7 @@ func (b *Buffer) Bytes() []byte {
 //申请新的字节切片，把原先的buf字节数据 拷贝一份到新的切片里
 func (b *Buffer) grow() {
 	nb := make([]byte, len(b.buf)*growFactor)
-	copy(nb, b.buf[:b.w])
+	copy(nb, b.buf[:b.w]) //直接copy？？
 	b.buf = nb
 }
 

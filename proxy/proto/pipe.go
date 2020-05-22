@@ -14,6 +14,7 @@ const (
 	pipeMaxCount = 32 //管道里消息最大个数
 )
 
+//pipe: https://www.cnblogs.com/luoxn28/p/11794540.html
 var (
 	errPipeChanFull = errors.New("pipe chan is full")
 )

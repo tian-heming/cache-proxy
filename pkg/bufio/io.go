@@ -154,8 +154,8 @@ const (
 // the underlying io.Writer.
 type Writer struct {
 	wr    *libnet.Conn
-	bufsp net.Buffers
-	bufs  [][]byte //写缓冲区 Flush刷到bufsp里
+	bufsp net.Buffers //由数据时，内核到tcp函数自动send到连接流里
+	bufs  [][]byte    //写缓冲区 Flush刷到bufsp里
 	cnt   int
 
 	err error

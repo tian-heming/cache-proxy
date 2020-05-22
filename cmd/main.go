@@ -53,7 +53,7 @@ func init() {
 	// flag.BoolVar(&metrics, "metrics", false, "proxy support prometheus metrics and reuse pprof port.")
 	flag.StringVar(&confFile, "conf", "", "conf file of proxy itself.")
 	flag.StringVar(&clusterConfFile, "cluster", "", "conf file of backend cluster.")
-	flag.BoolVar(&reload, "reload", true, "reloading the servers in cluster config file.")
+	flag.BoolVar(&reload, "reload", false, "reloading the servers in cluster config file.")
 	// flag.StringVar(&slowlogFile, "slowlog", "", "slowlog is the file where slowlog output")
 	// flag.IntVar(&slowlogSlowerThan, "slower-than", 0, "slower-than is the microseconds which slowlog must slower than.")
 }

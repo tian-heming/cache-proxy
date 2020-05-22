@@ -52,7 +52,7 @@ func TestBufferAdvance(t *testing.T) {
 
 func TestBufferShrink(t *testing.T) {
 	b := Get(defaultBufferSize)
-	copy(b.buf, []byte("abcde"))
+	copy(b.buf, []byte("abcde")) //零拷贝？？
 	b.r += 3
 	b.w += 5
 	b.shrink()

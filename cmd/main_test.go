@@ -22,7 +22,21 @@ func TestRedisClient(t *testing.T) {
 		Password: "",       // redis认证
 		DB:       0,        // 选择数据库
 	})
-	// statecmd := rdb.Pipeline().Auth("123456")
+	// rdb.Do("AUTH", "123456", "SET", "KI", "SSSSSS")
+	// rdb.Do("ping","ooo")
+	// Pipeer := rdb.Pipeline()
+	// Pipeer.Do("auth", "123456")
+	// // Pipeer.Auth("123456")
+	// Pipeer.Ping()
+	// // Pipeer.Select(15)
+	// Pipeer.Set("heee", "shang ee", 5*time.Minute)
+	// cmds, err := Pipeer.Exec()
+	// t.Log(cmds, err)
+	// for _, cmd := range cmds {
+	// 	t.Log(cmd.(*redis.StatusCmd).Args())
+	// }
+	// err = Pipeer.Close()
+	// t.Log(err)
 	// statecmd.Result()
 	pong, err := rdb.Ping().Result() // Output: PONG <nil>
 	t.Log("======哈======")
