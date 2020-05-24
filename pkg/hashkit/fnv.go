@@ -4,8 +4,8 @@ const (
 	prime64  = 1099511628211 //64位空间指数
 	offset64 = 14695981039346656037
 
-	prime64tw  = 1099511628211 & 0x0000ffff
-	offset64tw = 14695981039346656037 & 0xffffffff
+	prime64tw  = 1099511628211 & 0x0000ffff        //一个f对应4个1（截取后16位
+	offset64tw = 14695981039346656037 & 0xffffffff //截取后32位
 
 	prime32  = 16777619
 	offset32 = 2166136261
@@ -16,7 +16,7 @@ const (
 func hashFnv1a64(key []byte) uint {
 	hash := uint32(offset64tw)
 	for _, c := range key { //要hash的数的每个字节byte_of_data
-		hash ^= uint32(c)         //hash = hash xor octet_of_data 意思是把当前取来的字节和当前的hash值的第八位做抑或运算
+		hash ^= uint32(c)         //增加熵😊       //hash = hash xor octet_of_data 意思是把当前取来的字节和当前的hash值的第八位做抑或运算
 		hash *= uint32(prime64tw) //hash = hash * prime64tw 字符串hash特定范围的数字
 	}
 	return uint(hash)
